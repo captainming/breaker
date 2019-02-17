@@ -31,7 +31,7 @@
 2. 将`MiddleBufferInJvm`拷贝到`backend`下;
 3. 将`MiddleBufferInJs`拷贝到`frontend`下;
 4. 将`byteObject`包以及包内文件分别拷贝到`frontend`和`backend`中；
-以上操作可以参考`hiStream`工程`netSnake_back`分支下的结构来；
+以上操作可以参考`breaker`工程`netSnake_back`分支下的结构来；
 
 
 然后在需要使用编解码的文件中，引入编解码工具；
@@ -60,7 +60,7 @@
     }
   //msg 就可以直接交给Actor处理了;
   ```
-  具体参看backend：com.neo.sk.hiStream.http.ChatService
+  具体参看backend：com.neo.sk.breaker.http.ChatService
 
 
 ### In Js
@@ -90,4 +90,4 @@
     }
   }
   ```
-  具体参看frontend：com.neo.sk.hiStream.front.chat.Main
+  具体参看frontend：com.neo.sk.breaker.front.chat.Main

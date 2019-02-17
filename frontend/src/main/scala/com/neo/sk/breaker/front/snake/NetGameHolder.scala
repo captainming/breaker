@@ -1,7 +1,7 @@
-package com.neo.sk.hiStream.front.snake
+package com.neo.sk.breaker.front.snake
 
-import com.neo.sk.hiStream.snake.Protocol.GridDataSync
-import com.neo.sk.hiStream.snake._
+import com.neo.sk.breaker.snake.Protocol.GridDataSync
+import com.neo.sk.breaker.snake._
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
@@ -14,18 +14,21 @@ import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
   * Date: 9/1/2016
   * Time: 12:45 PM
   */
-@JSExportTopLevel("snake.NetGameHolder")
+/**
+  * used by ltm on 2/16/2019
+  */
+
 object NetGameHolder {
 
 
-  val bounds = Point(Boundary.w, Boundary.h)
   val canvasUnit = 10
-  val canvasBoundary = bounds * canvasUnit
-  val textLineHeight = 14
+  val canvasBoundary = Point(dom.window.innerWidth.toFloat,dom.window.innerHeight.toFloat)
+  val bounds = canvasBoundary / canvasUnit
 
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
   var myId = -1l
+  var myName = "test"
 
   val grid = new GridOnClient(bounds)
 
@@ -53,45 +56,20 @@ object NetGameHolder {
   private[this] lazy val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
   private[this] lazy val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] lazy val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+  private[this] val drawGame = new Draw(ctx, canvas)
 
-  @JSExport
-  def run(): Unit = {
-    drawGameOff()
-    canvas.width = canvasBoundary.x
-    canvas.height = canvasBoundary.y
+  def start(name: String): Unit = {
+    drawGame.drawGameOff(firstCome)
+    canvas.width = canvasBoundary.x.toInt
+    canvas.height = canvasBoundary.y.toInt
 
-    joinButton.onclick = { (event: MouseEvent) =>
-      joinGame(nameField.value)
-      event.preventDefault()
-    }
-    nameField.focus()
-    nameField.onkeypress = { (event: KeyboardEvent) =>
-      if (event.keyCode == 13) {
-        joinButton.click()
-        event.preventDefault()
-      }
-    }
+    myName = name
+    joinGame(name)
 
     dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
   }
 
-  def drawGameOn(): Unit = {
-    ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-  }
 
-  def drawGameOff(): Unit = {
-    ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, bounds.x * canvasUnit, bounds.y * canvasUnit)
-    ctx.fillStyle = "rgb(250, 250, 250)"
-    if (firstCome) {
-      ctx.font = "36px Helvetica"
-      ctx.fillText("Welcome.", 150, 180)
-    } else {
-      ctx.font = "36px Helvetica"
-      ctx.fillText("Ops, connection lost.", 150, 180)
-    }
-  }
 
 
   def gameLoop(): Unit = {
@@ -112,115 +90,33 @@ object NetGameHolder {
   def draw(): Unit = {
     if (wsSetup) {
       val data = grid.getGridData
-      drawGrid(myId, data)
+      drawGame.drawGrid(myId, data)
+      drawGame.drawRank(currentRank)
+      data.snakes.find(_.id == myId) match {
+        case Some(snake) =>
+          firstCome = false
+        case None =>
+          if (firstCome) {
+            ctx.font = "36px Helvetica"
+            ctx.fillText("Please wait.", 150, 180)
+          } else {
+            ctx.font = "36px Helvetica"
+            ctx.fillText("Ops, Press Space Key To Restart!", 150, 180)
+          }
+      }
+
     } else {
-      drawGameOff()
+      drawGame.drawGameOff(firstCome)
     }
-  }
-
-  def drawGrid(uid: Long, data: GridDataSync): Unit = {
-
-    ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, bounds.x * canvasUnit, bounds.y * canvasUnit)
-
-    val snakes = data.snakes
-    val bodies = data.bodyDetails
-    val apples = data.appleDetails
-
-    ctx.fillStyle = MyColors.otherBody
-    bodies.foreach { case Bd(id, life, x, y) =>
-      //println(s"draw body at $p body[$life]")
-      if (id == uid) {
-        ctx.save()
-        ctx.fillStyle = MyColors.myBody
-        ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
-        ctx.restore()
-      } else {
-        ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
-      }
-    }
-
-    apples.foreach { case Ap(score, life, x, y) =>
-      ctx.fillStyle = score match {
-        case 10 => Color.Yellow.toString()
-        case 5 => Color.Blue.toString()
-        case _ => Color.Red.toString()
-      }
-      ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
-    }
-
-    ctx.fillStyle = MyColors.otherHeader
-    snakes.foreach { snake =>
-      val id = snake.id
-      val x = snake.header.x
-      val y = snake.header.y
-      if (id == uid) {
-        ctx.save()
-        ctx.fillStyle = MyColors.myHeader
-        ctx.fillRect(x * canvasUnit + 2, y * canvasUnit + 2, canvasUnit - 4, canvasUnit - 4)
-        ctx.restore()
-      } else {
-        ctx.fillRect(x * canvasUnit + 2, y * canvasUnit + 2, canvasUnit - 4, canvasUnit - 4)
-      }
-    }
-
-
-    ctx.fillStyle = "rgb(250, 250, 250)"
-    ctx.textAlign = "left"
-    ctx.textBaseline = "top"
-
-    val leftBegin = 10
-    val rightBegin = canvasBoundary.x - 150
-
-    snakes.find(_.id == uid) match {
-      case Some(mySnake) =>
-        firstCome = false
-        val baseLine = 1
-        ctx.font = "12px Helvetica"
-        drawTextLine(s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
-        drawTextLine(s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
-        drawTextLine(s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
-      case None =>
-        if (firstCome) {
-          ctx.font = "36px Helvetica"
-          ctx.fillText("Please wait.", 150, 180)
-        } else {
-          ctx.font = "36px Helvetica"
-          ctx.fillText("Ops, Press Space Key To Restart!", 150, 180)
-        }
-    }
-
-    ctx.font = "12px Helvetica"
-    val currentRankBaseLine = 5
-    var index = 0
-    drawTextLine(s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine)
-    currentRank.foreach { score =>
-      index += 1
-      drawTextLine(s"[$index]: ${score.n.+("   ").take(3)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine)
-    }
-
-    val historyRankBaseLine = 1
-    index = 0
-    drawTextLine(s" --- History Rank --- ", rightBegin, index, historyRankBaseLine)
-    historyRank.foreach { score =>
-      index += 1
-      drawTextLine(s"[$index]: ${score.n.+("   ").take(3)} kill=${score.k} len=${score.l}", rightBegin, index, historyRankBaseLine)
-    }
-
-  }
-
-  def drawTextLine(str: String, x: Int, lineNum: Int, lineBegin: Int = 0) = {
-    ctx.fillText(str, x, (lineNum + lineBegin - 1) * textLineHeight)
   }
 
 
   def joinGame(name: String): Unit = {
-    joinButton.disabled = true
     val playground = dom.document.getElementById("playground")
     playground.innerHTML = s"Trying to join game as '$name'..."
     val gameStream = new WebSocket(getWebSocketUri(dom.document, name))
     gameStream.onopen = { (event0: Event) =>
-      drawGameOn()
+      drawGame.drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
       canvas.focus()
@@ -242,7 +138,7 @@ object NetGameHolder {
     }
 
     gameStream.onerror = { (event: Event) =>
-      drawGameOff()
+      drawGame.drawGameOff(firstCome)
       playground.insertBefore(p(s"Failed: code: ${event.`type`}"), playground.firstChild)
       joinButton.disabled = false
       wsSetup = false
@@ -253,7 +149,6 @@ object NetGameHolder {
 
     import io.circe.generic.auto._
     import io.circe.parser._
-
     gameStream.onmessage = { (event: MessageEvent) =>
       //val wsMsg = read[Protocol.GameMessage](event.data.toString)
       val wsMsg = decode[Protocol.GameMessage](event.data.toString).right.get
@@ -298,7 +193,7 @@ object NetGameHolder {
 
 
     gameStream.onclose = { (event: Event) =>
-      drawGameOff()
+      drawGame.drawGameOff(firstCome)
       playground.insertBefore(p("Connection to game lost. You can try to rejoin manually."), playground.firstChild)
       joinButton.disabled = false
       wsSetup = false
@@ -311,7 +206,7 @@ object NetGameHolder {
 
   def getWebSocketUri(document: Document, nameOfChatParticipant: String): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/hiStream/netSnake/join?name=$nameOfChatParticipant"
+    s"$wsProtocol://${dom.document.location.host}/breaker/netSnake/join?name=$nameOfChatParticipant"
   }
 
   def p(msg: String) = {

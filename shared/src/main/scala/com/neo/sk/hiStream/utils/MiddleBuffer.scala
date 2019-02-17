@@ -1,5 +1,5 @@
 
-package com.neo.sk.hiStream.utils
+package com.neo.sk.breaker.utils
 
 import scala.reflect.ClassTag
 

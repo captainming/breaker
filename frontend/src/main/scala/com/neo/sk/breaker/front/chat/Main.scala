@@ -1,8 +1,8 @@
-package com.neo.sk.hiStream.front.chat
+package com.neo.sk.breaker.front.chat
 
 import com.neo.sk.frontUtils.byteObject.decoder
 import com.neo.sk.frontUtils.{Component, MiddleBufferInJs}
-import com.neo.sk.hiStream.chat.Protocol.{Msg, MultiTextMsg, TextMsg}
+import com.neo.sk.breaker.chat.Protocol.{Msg, MultiTextMsg, TextMsg}
 import mhtml._
 import org.scalajs.dom
 import org.scalajs.dom.ext.KeyCode
@@ -46,7 +46,7 @@ object MainPage extends Component {
 
   private def getWebSocketUri(nameOfChatParticipant: String): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/hiStream/chat/join?name=$nameOfChatParticipant"
+    s"$wsProtocol://${dom.document.location.host}/breaker/chat/join?name=$nameOfChatParticipant"
   }
 
   private def joinRoom(name: String): Unit = {

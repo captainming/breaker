@@ -1,6 +1,6 @@
-package com.neo.sk.hiStream
+package com.neo.sk.breaker
 
-import com.neo.sk.hiStream.snake.Protocol
+import com.neo.sk.breaker.snake.Protocol
 
 /**
   * User: Taoz

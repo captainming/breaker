@@ -1,4 +1,4 @@
-package com.neo.sk.hiStream.http
+package com.neo.sk.breaker.http
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -10,8 +10,8 @@ import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.util.{ByteString, Timeout}
-import com.neo.sk.hiStream.chat.ChatRoom
-import com.neo.sk.hiStream.chat.Protocol.{Msg, TestMessage, TextMsg}
+import com.neo.sk.breaker.chat.ChatRoom
+import com.neo.sk.breaker.chat.Protocol.{Msg, TestMessage, TextMsg}
 import com.neo.sk.utils.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 
@@ -37,7 +37,7 @@ trait ChatService {
 
   private val idGenerator = new AtomicInteger(1000000)
 
-  private[this] val log = LoggerFactory.getLogger("com.neo.sk.hiStream.http.SnakeService")
+  private[this] val log = LoggerFactory.getLogger("SnakeService")
 
 
   val chatRoute: Route = {

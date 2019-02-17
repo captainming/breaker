@@ -2,29 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>justTest</title>
+  <title>Breaker</title>
 </head>
-<body>
+<body style="height: 100%;overflow: hidden;">
 
 
-  <h1>hello there:</h1>
+
+ <link rel="stylesheet" href="/breaker/static/css/bootstrap.min.css" />
+ <link rel="stylesheet" href="/breaker/static/css/entryPage.css" />
+  <!--canvas id="GameView" tabindex="1"></canvas-->
 
 
-  <form action="#">
-    <label for="name">Name: </label><input id="name" type="text" />
-    <input id="join" type="button" value="Join!"/>
-  </form>
+  <!--div id="playground"></div-->
 
-  <br>
-  <canvas id="GameView" tabindex="1"></canvas>
+  <script type="text/javascript" src="/breaker/static/sjsout/frontend-fastopt.js"></script>
+  <!--<script type="text/javascript" src="/breaker/frontend-launcher.js"></script>-->
 
-
-  <div id="playground"></div>
-
-  <script type="text/javascript" src="/hiStream/static/sjsout/frontend-fastopt.js"></script>
-  <!--<script type="text/javascript" src="/hiStream/frontend-launcher.js"></script>-->
-
-  <script>snake.NetGameHolder.run()</script>
+  <script>front.Main.run()</script>
 
 </body>
 </html>

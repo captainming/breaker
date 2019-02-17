@@ -1,4 +1,4 @@
-package com.neo.sk.hiStream
+package com.neo.sk.breaker
 
 
 
@@ -15,17 +15,19 @@ package object snake {
   case class Apple(score: Int, life: Int) extends Spot
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
-  case class Bd(id: Long, life: Int, x: Int, y: Int)
-  case class Ap(score: Int, life: Int, x: Int, y: Int)
+  case class Bd(id: Long, life: Int, x: Float, y: Float)
+  case class Ap(score: Int, life: Int, x: Float, y: Float)
 
 
 
-  case class Point(x: Int, y: Int) {
+  case class Point(x: Float, y: Float) {
     def +(other: Point) = Point(x + other.x, y + other.y)
 
     def -(other: Point) = Point(x - other.x, y - other.y)
 
     def *(n: Int) = Point(x * n, y * n)
+
+    def /(value: Float) = Point(x / value, y / value)
 
     def %(other: Point) = Point(x % other.x, y % other.y)
   }

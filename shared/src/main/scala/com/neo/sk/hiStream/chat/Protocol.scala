@@ -1,6 +1,6 @@
-package com.neo.sk.hiStream.chat
+package com.neo.sk.breaker.chat
 
-import com.neo.sk.hiStream.utils.MiddleBuffer
+import com.neo.sk.breaker.utils.MiddleBuffer
 
 /**
   * User: Taoz

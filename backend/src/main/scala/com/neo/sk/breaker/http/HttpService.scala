@@ -1,4 +1,4 @@
-package com.neo.sk.hiStream.http
+package com.neo.sk.breaker.http
 
 import akka.NotUsed
 import akka.actor.{ActorRef, ActorSystem}
@@ -36,7 +36,7 @@ trait HttpService extends SnakeService with ChatService with ResourceService{
 
 
   val routes: Route =
-    pathPrefix("hiStream") {
+    pathPrefix("breaker") {
       snakeRoute ~
       netSnakeRoute ~
       chatRoute ~

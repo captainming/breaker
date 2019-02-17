@@ -1,4 +1,4 @@
-package com.neo.sk.hiStream.snake
+package com.neo.sk.breaker.snake
 
 /**
   * User: Taoz

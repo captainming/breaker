@@ -1,4 +1,4 @@
-package com.neo.sk.hiStream.snake
+package com.neo.sk.breaker.snake
 
 import java.awt.event.KeyEvent
 
@@ -86,9 +86,9 @@ trait Grid {
 
 
   def randomEmptyPoint(): Point = {
-    var p = Point(random.nextInt(boundary.x), random.nextInt(boundary.y))
+    var p = Point(random.nextInt(boundary.x.toInt), random.nextInt(boundary.y.toInt))
     while (grid.contains(p)) {
-      p = Point(random.nextInt(boundary.x), random.nextInt(boundary.y))
+      p = Point(random.nextInt(boundary.x.toInt), random.nextInt(boundary.y.toInt))
     }
     p
   }

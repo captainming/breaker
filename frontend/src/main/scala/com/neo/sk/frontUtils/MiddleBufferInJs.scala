@@ -1,6 +1,6 @@
 package com.neo.sk.frontUtils
 
-import com.neo.sk.hiStream.utils.MiddleBuffer
+import com.neo.sk.breaker.utils.MiddleBuffer
 
 import scala.scalajs.js
 
