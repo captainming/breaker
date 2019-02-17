@@ -90,6 +90,7 @@ object NetGameHolder {
   def draw(): Unit = {
     if (wsSetup) {
       val data = grid.getGridData
+      drawGame.drawBackground()
       drawGame.drawGrid(myId, data)
       drawGame.drawRank(currentRank)
       data.snakes.find(_.id == myId) match {

@@ -5,12 +5,17 @@ import org.scalajs.dom.ext.Color
 import com.neo.sk.breaker.snake.{Ap, Bd, Point, Score}
 import com.neo.sk.breaker.snake.Protocol.GridDataSync
 import org.scalajs.dom
-import org.scalajs.dom.html.Canvas
+import org.scalajs.dom.html.{Canvas,Image}
+
 
 
 class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
   private val window = Point(dom.document.documentElement.clientWidth - 12,dom.document.documentElement.clientHeight - 12 )
   private val textLineHeight = 14
+
+
+  private val mapImg = dom.document.createElement("img").asInstanceOf[Image]
+  mapImg.setAttribute("src","/breaker/static/img/background.png")
 
   def drawGameOn(): Unit = {
     ctx.fillStyle = Color.Black.toString()
@@ -30,11 +35,11 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
     }
   }
 
+  def drawBackground() = {
+    ctx.drawImage(mapImg, 0, 0, window.x, window.y)
+  }
+
   def drawGrid(uid: Long, data: GridDataSync): Unit = {
-
-    ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, window.x, window.y)
-
     val snakes = data.snakes
     val bodies = data.bodyDetails
     val apples = data.appleDetails
@@ -51,7 +56,6 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
         ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
       }
     }
-
     apples.foreach { case Ap(score, life, x, y) =>
       ctx.fillStyle = score match {
         case 10 => Color.Yellow.toString()
