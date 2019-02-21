@@ -1,5 +1,6 @@
 package com.neo.sk.breaker.snake
 
+import com.neo.sk.hiStream.snake.BkMap
 import org.slf4j.LoggerFactory
 
 /**
@@ -26,15 +27,13 @@ class GridOnServer(override val boundary: Point) extends Grid {
   var historyRankList = historyRankMap.values.toList.sortBy(_.k).reverse
 
   private[this] var historyRankThreshold = if (historyRankList.isEmpty) -1 else historyRankList.map(_.k).min
+  def addPlayer(id: Long, name: String) = waitingJoin += (id -> name)
 
-  def addSnake(id: Long, name: String) = waitingJoin += (id -> name)
 
-
-  private[this] def genWaitingSnake() = {
-    waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
-      val header = randomEmptyPoint()
-      grid += header -> Body(id, defaultLength - 1)
-      snakes += id -> SkDt(id, name, header)
+  private[this] def genWaitingBreaker() = {
+    waitingJoin.filterNot(kv => breakers.contains(kv._1)).foreach { case (id, name) =>
+      val header = Point(55, 50)
+      breakers += id -> Breaker(id, name, header)
     }
     waitingJoin = Map.empty[Long, String]
   }
@@ -94,7 +93,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   override def update(): Unit = {
     super.update()
-    genWaitingSnake()
+    genWaitingBreaker()
     updateRanks()
   }
 

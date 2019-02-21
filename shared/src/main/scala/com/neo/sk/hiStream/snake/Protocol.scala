@@ -12,8 +12,12 @@ object Protocol {
   case class GridDataSync(
     frameCount: Long,
     snakes: List[SkDt],
+    breakers: List[Breaker],
     bodyDetails: List[Bd],
-    appleDetails: List[Ap]
+    appleDetails: List[Ap],
+    blockDetails: List[Bk],
+    stickDetails: List[Sk],
+    ballDetails: List[Bl]
   ) extends GameMessage
 
 
@@ -21,6 +25,9 @@ object Protocol {
     aLs: List[Ap]
   ) extends GameMessage
 
+  case class BlockInit(
+    breaks: List[Bk]
+  ) extends GameMessage
 
 
   case class TextMsg(

@@ -2,6 +2,8 @@ package com.neo.sk.breaker.snake
 
 import java.awt.event.KeyEvent
 
+import com.neo.sk.hiStream.snake.BkMap
+
 import scala.util.Random
 
 
@@ -15,20 +17,21 @@ trait Grid {
   val boundary: Point
 
   def debug(msg: String): Unit
-
   def info(msg: String): Unit
 
   val random = new Random(System.nanoTime())
 
 
-  val defaultLength = 5
+  val defaultLength = 10
   val appleNum = 6
   val appleLife = 50
   val historyRankLength = 5
 
   var frameCount = 0l
+  var room = 1
   var grid = Map[Point, Spot]()
   var snakes = Map.empty[Long, SkDt]
+  var breakers = Map.empty[Long, Breaker]
   var actionMap = Map.empty[Long, Map[Long, Int]]
 
 
@@ -40,6 +43,19 @@ trait Grid {
     r
   }
 
+  def removeBreaker(id: Long) = {
+    val s = breakers.get(id)
+    if (s.isDefined) {
+      breakers -= id
+    }
+  }
+
+  def genBlocks() = {
+    val blocks = BkMap.BlockMap(room)
+    grid ++= blocks.map ( b =>
+      Point(b.x, b.y) -> Block(b.score)
+    )
+  }
 
   def addAction(id: Long, keyCode: Int) = {
     addActionWithFrame(id, keyCode, frameCount)
@@ -53,8 +69,7 @@ trait Grid {
 
 
   def update() = {
-    //println(s"-------- grid update frameCount= $frameCount ---------")
-    updateSnakes()
+    updateBreakers()
     updateSpots()
     actionMap -= frameCount
     frameCount += 1
@@ -67,18 +82,11 @@ trait Grid {
     var appleCount = 0
     grid = grid.filter { case (p, spot) =>
       spot match {
-        case Body(id, life) if life >= 0 && snakes.contains(id) => true
-        case Apple(_, life) if life >= 0 => true
-        //case Header(id, _) if snakes.contains(id) => true
+        case Block(_) => true
+        case Ball(_, _, _, _) => true
+        case Stick(id, _, _) if breakers.contains(id) => true
         case _ => false
       }
-    }.map {
-      //case (p, Header(id, life)) => (p, Body(id, life - 1))
-      case (p, b@Body(_, life)) => (p, b.copy(life = life - 1))
-      case (p, a@Apple(_, life)) =>
-        appleCount += 1
-        (p, a.copy(life = life - 1))
-      case x => x
     }
 
     feedApple(appleCount)
@@ -94,78 +102,35 @@ trait Grid {
   }
 
 
-  private[this] def updateSnakes() = {
-    def updateASnake(snake: SkDt, actMap: Map[Long, Int]): Either[Long, SkDt] = {
-      val keyCode = actMap.get(snake.id)
-      debug(s" +++ snake[${snake.id}] feel key: $keyCode at frame=$frameCount")
-      val newDirection = {
-        val keyDirection = keyCode match {
-          case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
-          case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
-          case Some(KeyEvent.VK_UP) => Point(0, -1)
-          case Some(KeyEvent.VK_DOWN) => Point(0, 1)
-          case _ => snake.direction
-        }
-        if (keyDirection + snake.direction != Point(0, 0)) {
-          keyDirection
-        } else {
-          snake.direction
-        }
-      }
+  private[this] def updateBreakers() ={
 
-      val newHeader = ((snake.header + newDirection) + boundary) % boundary
-
-      grid.get(newHeader) match {
-        case Some(x: Body) =>
-          debug(s"snake[${snake.id}] hit wall.")
-          Left(x.id)
-        case Some(Apple(score, _)) =>
-          val len = snake.length + score
-          grid -= newHeader
-          Right(snake.copy(header = newHeader, direction = newDirection, length = len))
-        case _ =>
-          Right(snake.copy(header = newHeader, direction = newDirection))
+    def updateABreaker(breaker: Breaker, actMap: Map[Long, Int]) = {
+      val keyCode = actMap.get(breaker.id)
+      println(s" breaker[${breaker.id}] feels key: $keyCode  at frame = $frameCount")
+      val keyDirection = keyCode match {
+        case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
+        case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
+        case _ => Point(0, 0)
       }
+      var newHeader = (keyDirection * 3 + breaker.header)
+      if (newHeader.x <= 0  || newHeader.x >= boundary.x - 20)
+      newHeader = breaker.header
+
+      grid -= breaker.header
+
+
+      Right(breaker.copy(header = newHeader))
     }
 
-
-    var mapKillCounter = Map.empty[Long, Int]
-    var updatedSnakes = List.empty[SkDt]
-
+    var updatedBreakers = List.empty[Breaker]
     val acts = actionMap.getOrElse(frameCount, Map.empty[Long, Int])
-
-    snakes.values.map(updateASnake(_, acts)).foreach {
-      case Right(s) => updatedSnakes ::= s
-      case Left(killerId) =>
-        mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
+    breakers.values.map(updateABreaker(_, acts)).foreach {
+      case Right(s) => updatedBreakers ::= s
     }
 
-
-    //if two (or more) headers go to the same point,
-    val snakesInDanger = updatedSnakes.groupBy(_.header).filter(_._2.size > 1).values
-
-    val deadSnakes =
-      snakesInDanger.flatMap { hits =>
-        val sorted = hits.toSeq.sortBy(_.length)
-        val winner = sorted.head
-        val deads = sorted.tail
-        mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
-        deads
-      }.map(_.id).toSet
-
-
-    val newSnakes = updatedSnakes.filterNot(s => deadSnakes.contains(s.id)).map { s =>
-      mapKillCounter.get(s.id) match {
-        case Some(k) => s.copy(kill = s.kill + k)
-        case None => s
-      }
-    }
-
-    grid ++= newSnakes.map(s => s.header -> Body(s.id, s.length))
-    snakes = newSnakes.map(s => (s.id, s)).toMap
-
+    grid ++= updatedBreakers.map(s => s.header -> Stick(s.id, s.sLength, "#696969"))
+    breakers = updatedBreakers.map(s => (s.id, s)).toMap
   }
-
 
   def updateAndGetGridData() = {
     update()
@@ -175,16 +140,27 @@ trait Grid {
   def getGridData = {
     var bodyDetails: List[Bd] = Nil
     var appleDetails: List[Ap] = Nil
+    var blockDetails: List[Bk] = Nil
+    var stickDetails: List[Sk] = Nil
+    var ballDetails: List[Bl] = Nil
+
     grid.foreach {
       case (p, Body(id, life)) => bodyDetails ::= Bd(id, life, p.x, p.y)
       case (p, Apple(score, life)) => appleDetails ::= Ap(score, life, p.x, p.y)
       case (p, Header(id, life)) => bodyDetails ::= Bd(id, life, p.x, p.y)
+      case (p, Block(score)) => blockDetails ::= Bk(score, p.x, p.y)
+      case (p, Stick(id, length, color)) => stickDetails ::= Sk(id, p, length, color)
+      case (p, Ball(id, color, direction, speed)) => ballDetails ::= Bl(id, p, color, direction, speed)
     }
     Protocol.GridDataSync(
       frameCount,
       snakes.values.toList,
+      breakers.values.toList,
       bodyDetails,
-      appleDetails
+      appleDetails,
+      blockDetails,
+      stickDetails,
+      ballDetails
     )
   }
 

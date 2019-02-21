@@ -22,8 +22,8 @@ object NetGameHolder {
 
 
   val canvasUnit = 10
-  val canvasBoundary = Point(dom.window.innerWidth.toFloat,dom.window.innerHeight.toFloat)
-  val bounds = canvasBoundary / canvasUnit
+  val bounds = Point(Boundary.w, Boundary.h)
+  val canvasBoundary = bounds * canvasUnit
 
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
@@ -93,8 +93,8 @@ object NetGameHolder {
       drawGame.drawBackground()
       drawGame.drawGrid(myId, data)
       drawGame.drawRank(currentRank)
-      data.snakes.find(_.id == myId) match {
-        case Some(snake) =>
+      data.breakers.find(_.id == myId) match {
+        case Some(breaker) =>
           firstCome = false
         case None =>
           if (firstCome) {
@@ -173,18 +173,25 @@ object NetGameHolder {
         case Protocol.FeedApples(apples) =>
           writeToArea(s"apple feeded = $apples") //for debug.
           grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life))
+
+        case Protocol.BlockInit(blocks) =>
+          grid.grid ++= blocks.map(a => Point(a.x, a.y) -> Block(a.score))
+
         case data: Protocol.GridDataSync =>
           //writeToArea(s"grid data got: $msgData")
           //TODO here should be better code.
           grid.actionMap = grid.actionMap.filterKeys(_ > data.frameCount)
           grid.frameCount = data.frameCount
-          grid.snakes = data.snakes.map(s => s.id -> s).toMap
+          grid.breakers = data.breakers.map(s => s.id -> s).toMap
           val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life)).toMap
           val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life)).toMap
-          val gridMap = appleMap ++ bodyMap
+          val blockMap = data.blockDetails.map(c => Point(c.x, c.y) -> Block(c.score)).toMap
+          val stickMap = data.stickDetails.map(d => Point(d.position.x, d.position.y) -> Stick(d.id, d.length, d.color))
+          val ballMap = data.ballDetails.map(e => Point(e.position.x, e.position.y) -> Ball(e.id, e.color, e.direction, e.speed))
+          val gridMap = appleMap ++ bodyMap ++ blockMap ++ stickMap ++ ballMap
           grid.grid = gridMap
           justSynced = true
-        //drawGrid(msgData.uid, data)
+
         case Protocol.NetDelayTest(createTime) =>
           val receiveTime = System.currentTimeMillis()
           val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}"

@@ -51,25 +51,29 @@ object PlayGround {
           userMap += (id -> name)
           context.watch(subscriber)
           subscribers += (id -> subscriber)
-          grid.addSnake(id, name)
+          grid.addPlayer(id, name)
+          grid.genBlocks()
           dispatchTo(id, Protocol.Id(id))
           dispatch(Protocol.NewSnakeJoined(id, name))
           dispatch(grid.getGridData)
+
         case r@Left(id, name) =>
           log.info(s"got $r")
           subscribers.get(id).foreach(context.unwatch)
           subscribers -= id
           grid.removeSnake(id)
           dispatch(Protocol.SnakeLeft(id, name))
+
         case r@Key(id, keyCode) =>
           log.debug(s"got $r")
           dispatch(Protocol.TextMsg(s"Aha! $id click [$keyCode]")) //just for test
           if (keyCode == KeyEvent.VK_SPACE) {
-            grid.addSnake(id, userMap.getOrElse(id, "Unknown"))
+            grid.addPlayer(id, userMap.getOrElse(id, "Unknown"))
           } else {
             grid.addAction(id, keyCode)
             dispatch(Protocol.SnakeAction(id, keyCode, grid.frameCount))
           }
+
         case r@Terminated(actor) =>
           log.warn(s"got $r")
           subscribers.find(_._2.equals(actor)).foreach { case (id, _) =>
@@ -92,9 +96,11 @@ object PlayGround {
           if (tickCount % 20 == 1) {
             dispatch(Protocol.Ranks(grid.currentRank, grid.historyRankList))
           }
+
         case NetTest(id, createTime) =>
           log.info(s"Net Test: createTime=$createTime")
           dispatchTo(id, Protocol.NetDelayTest(createTime))
+
         case x =>
           log.warn(s"got unknown msg: $x")
       }
@@ -108,8 +114,7 @@ object PlayGround {
       }
 
 
-    }
-    ), "ground")
+    } ), "ground")
 
     import concurrent.duration._
     system.scheduler.schedule(3 seconds, Protocol.frameRate millis, ground, Sync) // sync tick

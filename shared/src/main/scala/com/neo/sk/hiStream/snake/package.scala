@@ -1,5 +1,6 @@
 package com.neo.sk.breaker
 
+import javafx.scene.effect.Light.Spot
 
 
 /**
@@ -7,18 +8,25 @@ package com.neo.sk.breaker
   * Date: 8/29/2016
   * Time: 9:48 PM
   */
+/**
+  * used by ltm on 2/17/2019
+  */
 package object snake {
 
   sealed trait Spot
   case class Body(id: Long, life: Int) extends Spot
   case class Header(id: Long, life: Int) extends Spot
   case class Apple(score: Int, life: Int) extends Spot
+  case class Block(score: Int) extends Spot
+  case class Stick(id: Long, length: Int, color: String) extends Spot
+  case class Ball(id: Long, color: String, direction: Point, speed: Int = start) extends Spot
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
   case class Bd(id: Long, life: Int, x: Float, y: Float)
   case class Ap(score: Int, life: Int, x: Float, y: Float)
-
-
+  case class Bk(score:Int, x: Float, y: Float)
+  case class Sk(id: Long, position: Point, length: Int, color: String)
+  case class Bl(id: Long, position: Point, color: String, direction: Point, speed: Int = start)
 
   case class Point(x: Float, y: Float) {
     def +(other: Point) = Point(x + other.x, y + other.y)
@@ -32,13 +40,6 @@ package object snake {
     def %(other: Point) = Point(x % other.x, y % other.y)
   }
 
-
-  class Snake(x: Int, y: Int, len: Int = 5, d: Point = Point(1, 0)) {
-    var length = len
-    var direction = d
-    var header = Point(x, y)
-  }
-
   case class SkDt(
     id: Long,
     name: String,
@@ -48,13 +49,20 @@ package object snake {
     kill: Int = 0
   )
 
+  case class Breaker(
+    id: Long,
+    name: String,
+    header: Point,
+    sLength: Int = 20,
+    score: Int = 0
+  )
 
   object Boundary{
     val w = 120
     val h = 60
   }
 
-
+  def start = 16
 
 
 

@@ -2,10 +2,10 @@ package com.neo.sk.breaker.front.snake
 
 import com.neo.sk.breaker.front.snake.NetGameHolder.{MyColors, bounds, canvasBoundary, canvasUnit}
 import org.scalajs.dom.ext.Color
-import com.neo.sk.breaker.snake.{Ap, Bd, Point, Score}
+import com.neo.sk.breaker.snake._
 import com.neo.sk.breaker.snake.Protocol.GridDataSync
 import org.scalajs.dom
-import org.scalajs.dom.html.{Canvas,Image}
+import org.scalajs.dom.html.{Canvas, Image}
 
 
 
@@ -36,15 +36,25 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
   }
 
   def drawBackground() = {
-    ctx.drawImage(mapImg, 0, 0, window.x, window.y)
+    ctx.drawImage(mapImg, 0, 0, canvasBoundary.x, canvasBoundary.y)
   }
 
   def drawGrid(uid: Long, data: GridDataSync): Unit = {
+    val b_height = bounds.y / 30
+    val b_weight = bounds.x / 15
+
     val snakes = data.snakes
     val bodies = data.bodyDetails
     val apples = data.appleDetails
+    val blocks = data.blockDetails
+    val sticks = data.stickDetails
+    val balls = data.ballDetails
 
     ctx.fillStyle = MyColors.otherBody
+    sticks.foreach {case Sk(id, position, length, color) =>
+      ctx.fillRect(position.x * canvasUnit + 1, position.y * canvasUnit + 1, length * canvasUnit -1, canvasUnit -1)
+    }
+
     bodies.foreach { case Bd(id, life, x, y) =>
       //println(s"draw body at $p body[$life]")
       if (id == uid) {
@@ -63,6 +73,14 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
         case _ => Color.Red.toString()
       }
       ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
+    }
+    blocks.foreach{ case Bk(score, x, y) =>
+      ctx.fillStyle = score match{
+        case 10 => Color.Yellow.toString()
+        case 5 => Color.Blue.toString()
+        case _ => Color.Red.toString()
+      }
+      ctx.fillRect(x * canvasUnit, y * canvasUnit, b_weight * canvasUnit, b_height * canvasUnit)
     }
 
     ctx.fillStyle = MyColors.otherHeader
