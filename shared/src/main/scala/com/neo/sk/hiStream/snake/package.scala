@@ -16,13 +16,13 @@ package object snake {
   sealed trait Spot
 
   case class Block(score: Int) extends Spot
-  case class Stick(id: Long, length: Int, color: String) extends Spot
-  case class Ball(id: Long, color: String, direction: Point, speed: Int) extends Spot
+  case class Stick(id: Long, length: Int, color: Int) extends Spot
+  case class Ball(id: Long, color: Int, direction: Point, speed: Int) extends Spot
 
   case class Score(id: Long, n: String, s: Int, t: Option[Long] = None)
   case class Bk(score:Int, x: Float, y: Float)
-  case class Sk(id: Long, position: Point, length: Int, color: String)
-  case class Bl(id: Long, position: Point, color: String, direction: Point, speed: Int = start)
+  case class Sk(id: Long, position: Point, length: Int, color: Int)
+  case class Bl(id: Long, position: Point, color: Int, direction: Point, speed: Int = Speed)
 
   case class Point(x: Float, y: Float) {
     def +(other: Point) = Point(x + other.x, y + other.y)
@@ -58,9 +58,14 @@ package object snake {
     val h = 60
   }
 
+  object start{
+    val x = 20
+    val y = 10
+  }
+
   def b_height = Boundary.h / 30
   def b_width = Boundary.w / 15
-  def start = 3
+  def Speed = 3
   def radius = 1
 
 

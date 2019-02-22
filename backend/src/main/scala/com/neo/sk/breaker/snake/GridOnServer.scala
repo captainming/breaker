@@ -3,6 +3,8 @@ package com.neo.sk.breaker.snake
 import com.neo.sk.hiStream.snake.BkMap
 import org.slf4j.LoggerFactory
 
+import scala.util.Random
+
 /**
   * User: Taoz
   * Date: 9/3/2016
@@ -33,7 +35,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
     waitingJoin.filterNot(kv => breakers.contains(kv._1)).foreach { case (id, name) =>
       val header = Point(50, 50)
       val center = Point(60, 49)
-      breakers += id -> Breaker(id, name, Sk(id, header, 20, "#e0ffff"), Bl(id, center, "#c0ff3e", Point(0, 0)))
+      breakers += id -> Breaker(id, name, Sk(id, header, 20, Random.nextInt(3) + 1), Bl(id, center, random.nextInt(3) + 1, Point(0, 0)))
     }
     waitingJoin = Map.empty[Long, String]
   }

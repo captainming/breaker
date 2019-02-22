@@ -20,7 +20,8 @@ import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
   */
 
 object NetGameHolder {
-
+  private var logicFrameTime = System.currentTimeMillis()
+  var nextFrame = 0
 
   val canvasUnit = 10
   val bounds = Point(Boundary.w, Boundary.h)
@@ -32,7 +33,6 @@ object NetGameHolder {
   var myName = "test"
 
   val grid = new GridOnClient(bounds)
-
   var firstCome = true
   var wsSetup = false
   var justSynced = false
@@ -46,13 +46,6 @@ object NetGameHolder {
     KeyCode.F2,
     KeyCode.Enter
   )
-
-  object MyColors {
-    val myHeader = "#FF0000"
-    val myBody = "#FFFFFF"
-    val otherHeader = Color.Blue.toString()
-    val otherBody = "#696969"
-  }
 
   private[this] lazy val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
   private[this] lazy val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
@@ -69,10 +62,15 @@ object NetGameHolder {
     joinGame(name)
 
     dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
+    nextFrame = dom.window.requestAnimationFrame(gameRender())
   }
 
 
-
+  def gameRender(): Double => Unit = {
+    d =>
+      draw()
+      nextFrame = dom.window.requestAnimationFrame(gameRender())
+  }
 
   def gameLoop(): Unit = {
     if (wsSetup) {
@@ -82,7 +80,6 @@ object NetGameHolder {
         justSynced = false
       }
     }
-    draw()
   }
 
   def update(): Unit = {
@@ -132,6 +129,7 @@ object NetGameHolder {
               gameStream.send("T" + System.currentTimeMillis())
             } else {
               gameStream.send(e.keyCode.toString)
+              grid.addAction(myId, e.keyCode)
             }
             e.preventDefault()
           }
