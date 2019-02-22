@@ -63,7 +63,7 @@ package object snake {
     val y = 10
   }
 
-  def b_height = Boundary.h / 30
+  def b_height = Boundary.h / 20
   def b_width = Boundary.w / 15
   def Speed = 3
   def radius = 1
