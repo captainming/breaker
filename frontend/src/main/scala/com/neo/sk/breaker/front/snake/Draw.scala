@@ -4,6 +4,7 @@ import com.neo.sk.breaker.front.snake.NetGameHolder.{MyColors, bounds, canvasBou
 import org.scalajs.dom.ext.Color
 import com.neo.sk.breaker.snake._
 import com.neo.sk.breaker.snake.Protocol.GridDataSync
+import scala.math._
 import org.scalajs.dom
 import org.scalajs.dom.html.{Canvas, Image}
 
@@ -40,62 +41,30 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
   }
 
   def drawGrid(uid: Long, data: GridDataSync): Unit = {
-    val b_height = bounds.y / 30
-    val b_weight = bounds.x / 15
 
-    val snakes = data.snakes
-    val bodies = data.bodyDetails
-    val apples = data.appleDetails
     val blocks = data.blockDetails
     val sticks = data.stickDetails
     val balls = data.ballDetails
 
-    ctx.fillStyle = MyColors.otherBody
-    sticks.foreach {case Sk(id, position, length, color) =>
-      ctx.fillRect(position.x * canvasUnit + 1, position.y * canvasUnit + 1, length * canvasUnit -1, canvasUnit -1)
-    }
-
-    bodies.foreach { case Bd(id, life, x, y) =>
-      //println(s"draw body at $p body[$life]")
-      if (id == uid) {
-        ctx.save()
-        ctx.fillStyle = MyColors.myBody
-        ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
-        ctx.restore()
-      } else {
-        ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
-      }
-    }
-    apples.foreach { case Ap(score, life, x, y) =>
-      ctx.fillStyle = score match {
-        case 10 => Color.Yellow.toString()
-        case 5 => Color.Blue.toString()
-        case _ => Color.Red.toString()
-      }
-      ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
-    }
     blocks.foreach{ case Bk(score, x, y) =>
       ctx.fillStyle = score match{
         case 10 => Color.Yellow.toString()
         case 5 => Color.Blue.toString()
         case _ => Color.Red.toString()
       }
-      ctx.fillRect(x * canvasUnit, y * canvasUnit, b_weight * canvasUnit, b_height * canvasUnit)
+      ctx.fillRect(x * canvasUnit, y * canvasUnit, b_width * canvasUnit, b_height * canvasUnit)
     }
 
-    ctx.fillStyle = MyColors.otherHeader
-    snakes.foreach { snake =>
-      val id = snake.id
-      val x = snake.header.x
-      val y = snake.header.y
-      if (id == uid) {
-        ctx.save()
-        ctx.fillStyle = MyColors.myHeader
-        ctx.fillRect(x * canvasUnit + 2, y * canvasUnit + 2, canvasUnit - 4, canvasUnit - 4)
-        ctx.restore()
-      } else {
-        ctx.fillRect(x * canvasUnit + 2, y * canvasUnit + 2, canvasUnit - 4, canvasUnit - 4)
-      }
+    sticks.foreach { case Sk(id, position, length, color) =>
+      ctx.fillStyle = color
+      ctx.fillRect(position.x * canvasUnit , position.y * canvasUnit , length * canvasUnit , 2 * canvasUnit )
+    }
+
+    balls.foreach{ case Bl(_, position, color, _, _) =>
+      ctx.fillStyle = color
+      ctx.beginPath()
+      ctx.arc(position.x * canvasUnit + 1, position.y * canvasUnit + 1,  canvasUnit, 0, 2 * Pi)
+      ctx.fill()
     }
   }
 
@@ -114,7 +83,7 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
     drawTextLine(s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine)
     rank.foreach { score =>
       index += 1
-      drawTextLine(s"[$index]: ${score.n.+("   ").take(5)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine)
+      drawTextLine(s"[$index]: ${score.n.+("   ").take(5)} score=${score.s} }", leftBegin, index, currentRankBaseLine)
     }
 
   }

@@ -61,8 +61,8 @@ object PlayGround {
           log.info(s"got $r")
           subscribers.get(id).foreach(context.unwatch)
           subscribers -= id
-          grid.removeSnake(id)
-          dispatch(Protocol.SnakeLeft(id, name))
+          grid.removeBreaker(id)
+          dispatch(Protocol.BreakerLeft(id, name))
 
         case r@Key(id, keyCode) =>
           log.debug(s"got $r")
@@ -79,19 +79,14 @@ object PlayGround {
           subscribers.find(_._2.equals(actor)).foreach { case (id, _) =>
             log.debug(s"got Terminated id = $id")
             subscribers -= id
-            grid.removeSnake(id).foreach(s => dispatch(Protocol.SnakeLeft(id, s.name)))
+            grid.removeBreaker(id).foreach(s => dispatch(Protocol.BreakerLeft(id, s.name)))
           }
         case Sync =>
           tickCount += 1
           grid.update()
-          val feedApples = grid.getFeededApple
           if (tickCount % 20 == 5) {
             val gridData = grid.getGridData
             dispatch(gridData)
-          } else {
-            if (feedApples.nonEmpty) {
-              dispatch(Protocol.FeedApples(feedApples))
-            }
           }
           if (tickCount % 20 == 1) {
             dispatch(Protocol.Ranks(grid.currentRank, grid.historyRankList))

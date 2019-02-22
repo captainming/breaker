@@ -11,19 +11,13 @@ object Protocol {
 
   case class GridDataSync(
     frameCount: Long,
-    snakes: List[SkDt],
     breakers: List[Breaker],
-    bodyDetails: List[Bd],
-    appleDetails: List[Ap],
     blockDetails: List[Bk],
     stickDetails: List[Sk],
     ballDetails: List[Bl]
   ) extends GameMessage
 
 
-  case class FeedApples(
-    aLs: List[Ap]
-  ) extends GameMessage
 
   case class BlockInit(
     breaks: List[Bk]
@@ -40,7 +34,7 @@ object Protocol {
 
   case class SnakeAction(id: Long, keyCode: Int, frame: Long) extends GameMessage
 
-  case class SnakeLeft(id: Long, name: String) extends GameMessage
+  case class BreakerLeft(id: Long, name: String) extends GameMessage
 
   case class Ranks(currentRank: List[Score], historyRank: List[Score]) extends GameMessage
 

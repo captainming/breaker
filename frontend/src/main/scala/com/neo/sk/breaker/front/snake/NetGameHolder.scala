@@ -3,6 +3,7 @@ package com.neo.sk.breaker.front.snake
 import com.neo.sk.breaker.snake.Protocol.GridDataSync
 import com.neo.sk.breaker.snake._
 import org.scalajs.dom
+import org.scalajs.dom.ext
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
@@ -42,7 +43,8 @@ object NetGameHolder {
     KeyCode.Up,
     KeyCode.Right,
     KeyCode.Down,
-    KeyCode.F2
+    KeyCode.F2,
+    KeyCode.Enter
   )
 
   object MyColors {
@@ -157,7 +159,7 @@ object NetGameHolder {
         case Protocol.Id(id) => myId = id
         case Protocol.TextMsg(message) => writeToArea(s"MESSAGE: $message")
         case Protocol.NewSnakeJoined(id, user) => writeToArea(s"$user joined!")
-        case Protocol.SnakeLeft(id, user) => writeToArea(s"$user left!")
+        case Protocol.BreakerLeft(id, user) => writeToArea(s"$user left!")
         case a@Protocol.SnakeAction(id, keyCode, frame) =>
           if (frame > grid.frameCount) {
             //writeToArea(s"!!! got snake action=$a whem i am in frame=${grid.frameCount}")
@@ -170,9 +172,6 @@ object NetGameHolder {
           //writeToArea(s"rank update. current = $current") //for debug.
           currentRank = current
           historyRank = history
-        case Protocol.FeedApples(apples) =>
-          writeToArea(s"apple feeded = $apples") //for debug.
-          grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life))
 
         case Protocol.BlockInit(blocks) =>
           grid.grid ++= blocks.map(a => Point(a.x, a.y) -> Block(a.score))
@@ -183,12 +182,10 @@ object NetGameHolder {
           grid.actionMap = grid.actionMap.filterKeys(_ > data.frameCount)
           grid.frameCount = data.frameCount
           grid.breakers = data.breakers.map(s => s.id -> s).toMap
-          val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life)).toMap
-          val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life)).toMap
           val blockMap = data.blockDetails.map(c => Point(c.x, c.y) -> Block(c.score)).toMap
           val stickMap = data.stickDetails.map(d => Point(d.position.x, d.position.y) -> Stick(d.id, d.length, d.color))
           val ballMap = data.ballDetails.map(e => Point(e.position.x, e.position.y) -> Ball(e.id, e.color, e.direction, e.speed))
-          val gridMap = appleMap ++ bodyMap ++ blockMap ++ stickMap ++ ballMap
+          val gridMap = blockMap ++ stickMap ++ ballMap
           grid.grid = gridMap
           justSynced = true
 

@@ -14,16 +14,12 @@ import javafx.scene.effect.Light.Spot
 package object snake {
 
   sealed trait Spot
-  case class Body(id: Long, life: Int) extends Spot
-  case class Header(id: Long, life: Int) extends Spot
-  case class Apple(score: Int, life: Int) extends Spot
+
   case class Block(score: Int) extends Spot
   case class Stick(id: Long, length: Int, color: String) extends Spot
-  case class Ball(id: Long, color: String, direction: Point, speed: Int = start) extends Spot
+  case class Ball(id: Long, color: String, direction: Point, speed: Int) extends Spot
 
-  case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
-  case class Bd(id: Long, life: Int, x: Float, y: Float)
-  case class Ap(score: Int, life: Int, x: Float, y: Float)
+  case class Score(id: Long, n: String, s: Int, t: Option[Long] = None)
   case class Bk(score:Int, x: Float, y: Float)
   case class Sk(id: Long, position: Point, length: Int, color: String)
   case class Bl(id: Long, position: Point, color: String, direction: Point, speed: Int = start)
@@ -52,8 +48,8 @@ package object snake {
   case class Breaker(
     id: Long,
     name: String,
-    header: Point,
-    sLength: Int = 20,
+    stick: Sk,
+    ball: Bl,
     score: Int = 0
   )
 
@@ -62,8 +58,10 @@ package object snake {
     val h = 60
   }
 
-  def start = 16
-
+  def b_height = Boundary.h / 30
+  def b_width = Boundary.w / 15
+  def start = 3
+  def radius = 1
 
 
 }

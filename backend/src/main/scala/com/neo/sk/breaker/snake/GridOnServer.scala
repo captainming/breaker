@@ -19,77 +19,49 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
 
   private[this] var waitingJoin = Map.empty[Long, String]
-  private[this] var feededApples: List[Ap] = Nil
 
 
   var currentRank = List.empty[Score]
   private[this] var historyRankMap = Map.empty[Long, Score]
-  var historyRankList = historyRankMap.values.toList.sortBy(_.k).reverse
+  var historyRankList = historyRankMap.values.toList.sortBy(_.s).reverse
 
-  private[this] var historyRankThreshold = if (historyRankList.isEmpty) -1 else historyRankList.map(_.k).min
+  private[this] var historyRankThreshold = if (historyRankList.isEmpty) -1 else historyRankList.map(_.s).min
   def addPlayer(id: Long, name: String) = waitingJoin += (id -> name)
 
 
   private[this] def genWaitingBreaker() = {
     waitingJoin.filterNot(kv => breakers.contains(kv._1)).foreach { case (id, name) =>
-      val header = Point(55, 50)
-      breakers += id -> Breaker(id, name, header)
+      val header = Point(50, 50)
+      val center = Point(60, 49)
+      breakers += id -> Breaker(id, name, Sk(id, header, 20, "#e0ffff"), Bl(id, center, "#c0ff3e", Point(0, 0)))
     }
     waitingJoin = Map.empty[Long, String]
   }
 
-  implicit val scoreOrdering = new Ordering[Score] {
-    override def compare(x: Score, y: Score): Int = {
-      var r = y.k - x.k
-      if (r == 0) {
-        r = y.l - x.l
-      }
-      if (r == 0) {
-        r = (x.id - y.id).toInt
-      }
-      r
-    }
-  }
 
   private[this] def updateRanks() = {
-    currentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sorted
+    currentRank = breakers.values.map(s => Score(s.id, s.name, s.score)).toList.sortBy(s => s.s)
     var historyChange = false
     currentRank.foreach { cScore =>
       historyRankMap.get(cScore.id) match {
-        case Some(oldScore) if cScore.k > oldScore.k =>
+        case Some(oldScore) if cScore.s > oldScore.s =>
           historyRankMap += (cScore.id -> cScore)
           historyChange = true
-        case None if cScore.k > historyRankThreshold =>
+        case None if cScore.s > historyRankThreshold =>
           historyRankMap += (cScore.id -> cScore)
           historyChange = true
-        case _ => //do nothing.
+        case _ =>
       }
     }
 
     if (historyChange) {
-      historyRankList = historyRankMap.values.toList.sorted.take(historyRankLength)
-      historyRankThreshold = historyRankList.lastOption.map(_.k).getOrElse(-1)
+      historyRankList = historyRankMap.values.toList.sortBy(t => t.s).take(historyRankLength)
+      historyRankThreshold = historyRankList.lastOption.map(_.s).getOrElse(-1)
       historyRankMap = historyRankList.map(s => s.id -> s).toMap
     }
 
   }
 
-  override def feedApple(appleCount: Int): Unit = {
-    feededApples = Nil
-    var appleNeeded = snakes.size * 2 + appleNum - appleCount
-    while (appleNeeded > 0) {
-      val p = randomEmptyPoint()
-      val score = random.nextDouble() match {
-        case x if x > 0.95 => 10
-        case x if x > 0.8 => 5
-        case x => 1
-      }
-      val apple = Apple(score, appleLife)
-      feededApples ::= Ap(score, appleLife, p.x, p.y)
-      grid += (p -> apple)
-      appleNeeded -= 1
-    }
-  }
 
   override def update(): Unit = {
     super.update()
@@ -97,6 +69,5 @@ class GridOnServer(override val boundary: Point) extends Grid {
     updateRanks()
   }
 
-  def getFeededApple = feededApples
 
 }
