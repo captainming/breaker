@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream.scaladsl.Flow
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.util.Timeout
-import com.neo.sk.breaker.snake.PlayGround
+import com.neo.sk.breaker.breaker.PlayGround
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContextExecutor
@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContextExecutor
   * Date: 9/1/2016
   * Time: 4:13 PM
   */
-trait SnakeService {
+trait BreakerService {
 
 
   import io.circe.generic.auto._
@@ -42,7 +42,7 @@ trait SnakeService {
   val netSnakeRoute = {
     (pathPrefix("netSnake") & get) {
       pathEndOrSingleSlash {
-        getFromResource("html/netSnake.html")
+        getFromResource("html/netBreaker.html")
       } ~
       path("join") {
         parameter('name) { name =>

@@ -1,9 +1,9 @@
-package com.neo.sk.breaker.front.snake
+package com.neo.sk.breaker.front.breaker
 
-import com.neo.sk.breaker.front.snake.NetGameHolder.{bounds, canvasBoundary, canvasUnit}
+import com.neo.sk.breaker.front.breaker.NetGameHolder.{bounds, canvasBoundary, canvasUnit}
 import org.scalajs.dom.ext.Color
-import com.neo.sk.breaker.snake._
-import com.neo.sk.breaker.snake.Protocol.GridDataSync
+import com.neo.sk.breaker.breaker._
+import com.neo.sk.breaker.breaker.Protocol.GridDataSync
 import scala.math._
 import org.scalajs.dom
 import org.scalajs.dom.html.{Canvas, Image}
@@ -37,17 +37,29 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
   }
 
   def drawGameOff(firstCome: Boolean): Unit = {
-    ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(start.x, start.y, bounds.x * canvasUnit, bounds.y * canvasUnit)
+    ctx.drawImage(mapImg,0, 0, bounds.x * canvasUnit, bounds.y * canvasUnit)
     ctx.fillStyle = "rgb(250, 250, 250)"
+    ctx.font=s"36px Comic Sans Ms"
     if (firstCome) {
-      ctx.font = "36px Helvetica"
-      ctx.fillText("Welcome.", 150, 180)
-    } else {
-      ctx.font = "36px Helvetica"
-      ctx.fillText("Ops, connection lost.", 150, 180)
+      ctx.fillText("Welcome.", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
+    }  else{
+      ctx.fillText("Ops, connection lost.", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
     }
   }
+
+  def drawWait(typ: Int) ={
+    ctx.drawImage(mapImg,0, 0, bounds.x * canvasUnit, bounds.y * canvasUnit)
+    ctx.fillStyle = "#EE9A00"
+    ctx.font=s"36px Comic Sans Ms"
+    if (typ == 1) {
+      ctx.fillText("You Lose! Press Space Key To Restart!", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
+    } else if (typ == 2) {
+      ctx.fillText("You Win! Press Space Key To Restart!", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
+    } else if (typ == 3) {
+      ctx.fillText("Please wait. or Refresh to change your Room", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
+    }
+  }
+
 
   def drawBackground() = {
     ctx.drawImage(mapImg, 0, 0, canvasBoundary.x, canvasBoundary.y)

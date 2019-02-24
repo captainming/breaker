@@ -1,7 +1,7 @@
-package com.neo.sk.breaker.front.snake
+package com.neo.sk.breaker.front.breaker
 
-import com.neo.sk.breaker.snake.Protocol.GridDataSync
-import com.neo.sk.breaker.snake._
+import com.neo.sk.breaker.breaker.Protocol.GridDataSync
+import com.neo.sk.breaker.breaker._
 import org.scalajs.dom
 import org.scalajs.dom.ext
 import org.scalajs.dom.ext.{Color, KeyCode}
@@ -97,11 +97,9 @@ object NetGameHolder {
           firstCome = false
         case None =>
           if (firstCome) {
-            ctx.font = "36px Helvetica"
-            ctx.fillText("Please wait.", 150, 180)
+            drawGame.drawWait(3)
           } else {
-            ctx.font = "36px Helvetica"
-            ctx.fillText("Ops, Press Space Key To Restart!", 150, 180)
+            drawGame.drawWait(1)
           }
       }
 
@@ -156,13 +154,13 @@ object NetGameHolder {
       wsMsg match {
         case Protocol.Id(id) => myId = id
         case Protocol.TextMsg(message) => writeToArea(s"MESSAGE: $message")
-        case Protocol.NewSnakeJoined(id, user) => writeToArea(s"$user joined!")
+        case Protocol.NewBreakerJoined(id, user) => writeToArea(s"$user joined!")
         case Protocol.BreakerLeft(id, user) => writeToArea(s"$user left!")
-        case a@Protocol.SnakeAction(id, keyCode, frame) =>
+        case a@Protocol.BreakerAction(id, keyCode, frame) =>
           if (frame > grid.frameCount) {
-            //writeToArea(s"!!! got snake action=$a whem i am in frame=${grid.frameCount}")
+            //writeToArea(s"!!! got breaker action=$a whem i am in frame=${grid.frameCount}")
           } else {
-            //writeToArea(s"got snake action=$a")
+            //writeToArea(s"got breaker action=$a")
           }
           grid.addActionWithFrame(id, keyCode, frame)
 

@@ -1,6 +1,6 @@
-package com.neo.sk.breaker.front.snake
+package com.neo.sk.breaker.front.breaker
 
-import com.neo.sk.breaker.snake.{Grid, Point}
+import com.neo.sk.breaker.breaker.{Grid, Point}
 
 /**
   * User: Taoz

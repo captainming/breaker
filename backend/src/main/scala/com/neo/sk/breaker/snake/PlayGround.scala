@@ -1,4 +1,4 @@
-package com.neo.sk.breaker.snake
+package com.neo.sk.breaker.breaker
 
 import java.awt.event.KeyEvent
 
@@ -54,7 +54,7 @@ object PlayGround {
           grid.addPlayer(id, name)
           grid.genBlocks()
           dispatchTo(id, Protocol.Id(id))
-          dispatch(Protocol.NewSnakeJoined(id, name))
+          dispatch(Protocol.NewBreakerJoined(id, name))
           dispatch(grid.getGridData)
 
         case r@Left(id, name) =>
@@ -71,7 +71,7 @@ object PlayGround {
             grid.addPlayer(id, userMap.getOrElse(id, "Unknown"))
           } else {
             grid.addAction(id, keyCode)
-            dispatch(Protocol.SnakeAction(id, keyCode, grid.frameCount))
+            dispatch(Protocol.BreakerAction(id, keyCode, grid.frameCount))
           }
 
         case r@Terminated(actor) =>

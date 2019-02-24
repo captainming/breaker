@@ -1,6 +1,6 @@
-package com.neo.sk.breaker.snake
+package com.neo.sk.breaker.breaker
 
-import com.neo.sk.hiStream.snake.BkMap
+import com.neo.sk.breaker.breaker.BkMap
 import org.slf4j.LoggerFactory
 
 import scala.util.Random

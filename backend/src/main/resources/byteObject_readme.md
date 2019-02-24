@@ -17,7 +17,7 @@
 
 
 ## Example
-说了这么多, 其实使用起来非常非常简单, 代码在本工程的netSnake_back分支下； 
+说了这么多, 其实使用起来非常非常简单, 代码在本工程的netbreaker_back分支下； 
 例子，假设消息定义如下：
  ```
    sealed trait Msg
@@ -31,7 +31,7 @@
 2. 将`MiddleBufferInJvm`拷贝到`backend`下;
 3. 将`MiddleBufferInJs`拷贝到`frontend`下;
 4. 将`byteObject`包以及包内文件分别拷贝到`frontend`和`backend`中；
-以上操作可以参考`breaker`工程`netSnake_back`分支下的结构来；
+以上操作可以参考`breaker`工程`netbreaker_back`分支下的结构来；
 
 
 然后在需要使用编解码的文件中，引入编解码工具；

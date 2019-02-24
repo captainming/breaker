@@ -11,7 +11,7 @@ import javafx.scene.effect.Light.Spot
 /**
   * used by ltm on 2/17/2019
   */
-package object snake {
+package object breaker {
 
   sealed trait Spot
 
@@ -68,5 +68,24 @@ package object snake {
   def Speed = 3
   def radius = 1
 
+  trait CommonRsp {
+    val errCode: Int
+    val msg: String
+  }
+
+  final case class ErrorRsp(
+                             errCode: Int,
+                             msg: String
+                           ) extends CommonRsp
+
+  final case class SuccessRsp(
+                               errCode: Int = 0,
+                               msg: String = "ok"
+                             ) extends CommonRsp
+
+  trait Success extends CommonRsp{
+    implicit val errCode = 0
+    implicit val msg = "ok"
+  }
 
 }

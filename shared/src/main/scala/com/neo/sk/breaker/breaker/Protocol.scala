@@ -1,4 +1,4 @@
-package com.neo.sk.breaker.snake
+package com.neo.sk.breaker.breaker
 
 /**
   * User: Taoz
@@ -30,9 +30,9 @@ object Protocol {
 
   case class Id(id: Long) extends GameMessage
 
-  case class NewSnakeJoined(id: Long, name: String) extends GameMessage
+  case class NewBreakerJoined(id: Long, name: String) extends GameMessage
 
-  case class SnakeAction(id: Long, keyCode: Int, frame: Long) extends GameMessage
+  case class BreakerAction(id: Long, keyCode: Int, frame: Long) extends GameMessage
 
   case class BreakerLeft(id: Long, name: String) extends GameMessage
 

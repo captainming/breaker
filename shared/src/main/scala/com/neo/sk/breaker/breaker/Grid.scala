@@ -1,8 +1,8 @@
-package com.neo.sk.breaker.snake
+package com.neo.sk.breaker.breaker
 
 import java.awt.event.KeyEvent
 
-import com.neo.sk.hiStream.snake.BkMap
+import com.neo.sk.breaker.breaker.BkMap
 import scala.math._
 import scala.util.Random
 
@@ -31,7 +31,7 @@ trait Grid {
   val historyRankLength = 5
 
   var frameCount = 0l
-  var room = 1
+  var map = 1
   var grid = Map[Point, Spot]()
   var snakes = Map.empty[Long, SkDt]
   var breakers = Map.empty[Long, Breaker]
@@ -47,7 +47,7 @@ trait Grid {
   }
 
   def genBlocks() = {
-    val blocks = BkMap.BlockMap(room)
+    val blocks = BkMap.BlockMap(map)
     grid ++= blocks.map ( b =>
       Point(b.x, b.y) -> Block(b.score)
     )
@@ -96,7 +96,7 @@ trait Grid {
       case _ => Point(0, 0)
     }
     var newHeader = (keyDirection * 5 + breaker.stick.position)
-    if (newHeader.x <= 0  || newHeader.x >= boundary.x - 15)
+    if (newHeader.x + 15 <= 0  || newHeader.x >= boundary.x - 15)
       newHeader = breaker.stick.position
 
     //update ball

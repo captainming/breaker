@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContextExecutor
   * Date: 8/26/2016
   * Time: 10:27 PM
   */
-trait HttpService extends SnakeService with ChatService with ResourceService{
+trait HttpService extends BreakerService with UserService with ChatService with ResourceService{
 
 
   implicit val system: ActorSystem
@@ -28,16 +28,12 @@ trait HttpService extends SnakeService with ChatService with ResourceService{
 
 
 
-  val snakeRoute = {
-    (path("snake") & get) {
-      getFromResource("html/mySnake.html")
-    }
-  }
+
 
 
   val routes: Route =
     pathPrefix("breaker") {
-      snakeRoute ~
+      userRoutes ~
       netSnakeRoute ~
       chatRoute ~
       resourceRoutes

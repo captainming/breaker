@@ -1,6 +1,6 @@
-package com.neo.sk.hiStream.snake
+package com.neo.sk.breaker.breaker
 
-import com.neo.sk.breaker.snake.{Bk, Boundary}
+import com.neo.sk.breaker.breaker.{Bk, Boundary}
 
 
 object BkMap {
