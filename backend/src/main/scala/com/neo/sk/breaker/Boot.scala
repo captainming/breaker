@@ -21,10 +21,10 @@ object Boot extends HttpService {
 
 
   override implicit val system = ActorSystem("breaker", config)
-  // the executor should not be the default dispatcher.
+
   override implicit val executor = system.dispatchers.lookup("akka.actor.my-blocking-dispatcher")
   override implicit val materializer = ActorMaterializer()
-
+  override implicit val scheduler = system.scheduler
   override val timeout = Timeout(20 seconds) // for actor asks
 
   val log: LoggingAdapter = Logging(system, getClass)

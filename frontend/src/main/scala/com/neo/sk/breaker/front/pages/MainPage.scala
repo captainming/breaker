@@ -14,6 +14,7 @@ object MainPage extends PageSwitcher{
 
     case "login" :: Nil => EntryPage.render
     case "register" :: Nil => RegisterPage.render
+    case "welcome" :: Nil => WelcomePage.render
     case _ => println("default"); EntryPage.render
   }
 

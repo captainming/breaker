@@ -28,10 +28,12 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-actor" % akkaV withSources (),
     "com.typesafe.akka" %% "akka-actor-typed" % akkaV withSources (),
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
-    "com.typesafe.akka" %% "akka-stream" % akkaV
+    "com.typesafe.akka" %% "akka-stream" % akkaV,
+    "com.typesafe.akka" %% "akka-stream-typed" % akkaV
   )
 
   val akkaHttpSeq = Seq(
+    "com.typesafe.akka" %% "akka-http-core" % akkaHttpV,
     "com.typesafe.akka" %% "akka-http" % akkaHttpV,
     "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV
   )

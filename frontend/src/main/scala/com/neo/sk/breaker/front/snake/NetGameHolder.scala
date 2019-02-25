@@ -19,7 +19,7 @@ import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
   * used by ltm on 2/16/2019
   */
 
-object NetGameHolder {
+class NetGameHolder(id: Long, name: String, roomId: Long) {
   private var logicFrameTime = System.currentTimeMillis()
   var nextFrame = 0
 
@@ -47,13 +47,11 @@ object NetGameHolder {
     KeyCode.Enter
   )
 
-  private[this] lazy val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
-  private[this] lazy val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
-  private[this] lazy val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
-  private[this] lazy val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+  val canvas = dom.window.document.getElementById("GameView").asInstanceOf[HTMLCanvasElement]
+  val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private[this] val drawGame = new Draw(ctx, canvas)
 
-  def start(name: String): Unit = {
+  def start(): xml.Node = {
     drawGame.drawGameOff(firstCome)
     canvas.width = canvasBoundary.x.toInt
     canvas.height = canvasBoundary.y.toInt
@@ -63,6 +61,9 @@ object NetGameHolder {
 
     dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
     nextFrame = dom.window.requestAnimationFrame(gameRender())
+    <div>
+      <canvas id ="GameView" tabindex="1"> </canvas>
+    </div>
   }
 
 
@@ -139,9 +140,7 @@ object NetGameHolder {
     gameStream.onerror = { (event: Event) =>
       drawGame.drawGameOff(firstCome)
       playground.insertBefore(p(s"Failed: code: ${event.`type`}"), playground.firstChild)
-      joinButton.disabled = false
       wsSetup = false
-      nameField.focus()
 
     }
 
@@ -164,10 +163,9 @@ object NetGameHolder {
           }
           grid.addActionWithFrame(id, keyCode, frame)
 
-        case Protocol.Ranks(current, history) =>
+        case Protocol.Ranks(current) =>
           //writeToArea(s"rank update. current = $current") //for debug.
           currentRank = current
-          historyRank = history
 
         case Protocol.BlockInit(blocks) =>
           grid.grid ++= blocks.map(a => Point(a.x, a.y) -> Block(a.score))
@@ -196,9 +194,7 @@ object NetGameHolder {
     gameStream.onclose = { (event: Event) =>
       drawGame.drawGameOff(firstCome)
       playground.insertBefore(p("Connection to game lost. You can try to rejoin manually."), playground.firstChild)
-      joinButton.disabled = false
       wsSetup = false
-      nameField.focus()
     }
 
     def writeToArea(text: String): Unit =

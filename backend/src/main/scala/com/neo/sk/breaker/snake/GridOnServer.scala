@@ -20,9 +20,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
   override def info(msg: String): Unit = log.info(msg)
 
 
-  private[this] var waitingJoin = Map.empty[Long, String]
-
-
+  var waitingJoin = Map.empty[Long, String]
   var currentRank = List.empty[Score]
   private[this] var historyRankMap = Map.empty[Long, Score]
   var historyRankList = historyRankMap.values.toList.sortBy(_.s).reverse
@@ -30,6 +28,12 @@ class GridOnServer(override val boundary: Point) extends Grid {
   private[this] var historyRankThreshold = if (historyRankList.isEmpty) -1 else historyRankList.map(_.s).min
   def addPlayer(id: Long, name: String) = waitingJoin += (id -> name)
 
+
+  override def init(): Unit = {
+    super.init()
+    waitingJoin = Map.empty[Long, String]
+    currentRank = List.empty[Score]
+  }
 
   private[this] def genWaitingBreaker() = {
     waitingJoin.filterNot(kv => breakers.contains(kv._1)).foreach { case (id, name) =>

@@ -39,7 +39,7 @@ trait BreakerService {
   private[this] val log = LoggerFactory.getLogger("SnakeService")
 
 
-  val netSnakeRoute = {
+  val webSocketRoute = {
     (pathPrefix("netSnake") & get) {
       pathEndOrSingleSlash {
         getFromResource("html/netBreaker.html")

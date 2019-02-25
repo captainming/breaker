@@ -89,7 +89,7 @@ object PlayGround {
             dispatch(gridData)
           }
           if (tickCount % 20 == 1) {
-            dispatch(Protocol.Ranks(grid.currentRank, grid.historyRankList))
+            dispatch(Protocol.Ranks(grid.currentRank))
           }
 
         case NetTest(id, createTime) =>

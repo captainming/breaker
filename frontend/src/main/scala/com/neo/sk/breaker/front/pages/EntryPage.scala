@@ -1,7 +1,7 @@
 package com.neo.sk.breaker.front.pages
 
 import com.neo.sk.breaker.breaker.SuccessRsp
-import com.neo.sk.breaker.breaker.UserProtocol.LoginReq
+import com.neo.sk.breaker.breaker.UserProtocol.{LoginReq, LoginRsp}
 import com.neo.sk.breaker.front.Routes
 import com.neo.sk.breaker.front.common.Page
 import mhtml._
@@ -20,11 +20,9 @@ import scala.xml.Elem
 
 object EntryPage extends Page{
 
-  val canvas = <canvas id ="GameView" tabindex="1"> </canvas>
-  val playground = <div id="playground"></div>
-  val showGame = Var(0)
-  val show : Rx[Elem] = showGame.map{
-    case 0 =>
+//  val canvas = <canvas id ="GameView" tabindex="1"> </canvas>
+//  val playground = <div id="playground"></div>
+  val show = {
       <div>
         <div class="entry">
           <div class="title">
@@ -41,12 +39,6 @@ object EntryPage extends Page{
           </div>
         </div>
       </div>
-
-    case 1 =>
-      <div>
-        {canvas}
-        {playground}
-      </div>
   }
 
   def login(): Unit = {
@@ -58,11 +50,13 @@ object EntryPage extends Page{
     else {
       val url = Routes.User.login
       val data = LoginReq(username, password).asJson.noSpaces
-      Http.postJsonAndParse[SuccessRsp](url, data).map {
+      Http.postJsonAndParse[LoginRsp](url, data).map {
         case Right(rsp)=>
           if (rsp.errCode==0){
             JsFunc.alert("Login Success")
-            joinGame()
+            dom.window.localStorage.setItem("userId",rsp.data.get.uId.toString)
+            dom.window.localStorage.setItem("userName",rsp.data.get.username)
+            dom.window.location.href = "#/welcome"
           }
           else {
             println(s"error:${rsp.msg}")
@@ -75,13 +69,6 @@ object EntryPage extends Page{
     }
   }
 
-
-  def joinGame() ={
-    println("joinGame")
-    val userName = dom.document.getElementById("userName").asInstanceOf[Input].value
-    showGame := 1
-    NetGameHolder.start(userName)
-  }
 
   override def render: Elem =
     <div>

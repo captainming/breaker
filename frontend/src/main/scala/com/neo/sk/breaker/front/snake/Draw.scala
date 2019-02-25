@@ -1,6 +1,5 @@
 package com.neo.sk.breaker.front.breaker
 
-import com.neo.sk.breaker.front.breaker.NetGameHolder.{bounds, canvasBoundary, canvasUnit}
 import org.scalajs.dom.ext.Color
 import com.neo.sk.breaker.breaker._
 import com.neo.sk.breaker.breaker.Protocol.GridDataSync
@@ -13,7 +12,9 @@ import org.scalajs.dom.html.{Canvas, Image}
 class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
   private val window = Point(dom.document.documentElement.clientWidth - 12,dom.document.documentElement.clientHeight - 12 )
   private val textLineHeight = 14
-
+  val canvasUnit = 10
+  val bounds = Point(Boundary.w, Boundary.h)
+  val canvasBoundary = bounds * canvasUnit
 
   private val mapImg = dom.document.createElement("img").asInstanceOf[Image]
   mapImg.setAttribute("src","/breaker/static/img/background.jpeg")
@@ -52,11 +53,13 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
     ctx.fillStyle = "#EE9A00"
     ctx.font=s"36px Comic Sans Ms"
     if (typ == 1) {
-      ctx.fillText("You Lose! Press Space Key To Restart!", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
+      ctx.fillText("You Dead! Press Space Key To Restart!", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
     } else if (typ == 2) {
       ctx.fillText("You Win! Press Space Key To Restart!", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
     } else if (typ == 3) {
       ctx.fillText("Please wait. or Refresh to change your Room", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
+    } else if (typ == 4) {
+      ctx.fillText("You Dead! Press Space Key To Restart!", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
     }
   }
 

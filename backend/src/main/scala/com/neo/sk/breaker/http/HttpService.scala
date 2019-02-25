@@ -1,7 +1,7 @@
 package com.neo.sk.breaker.http
 
 import akka.NotUsed
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ActorRef, ActorSystem, Scheduler}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.{Flow, Sink, Source}
@@ -26,7 +26,7 @@ trait HttpService extends BreakerService with UserService with ChatService with 
 
   implicit val timeout: Timeout
 
-
+  implicit val scheduler: Scheduler
 
 
 
@@ -34,7 +34,7 @@ trait HttpService extends BreakerService with UserService with ChatService with 
   val routes: Route =
     pathPrefix("breaker") {
       userRoutes ~
-      netSnakeRoute ~
+      webSocketRoute ~
       chatRoute ~
       resourceRoutes
     }

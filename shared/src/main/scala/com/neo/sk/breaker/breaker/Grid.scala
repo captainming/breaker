@@ -3,6 +3,8 @@ package com.neo.sk.breaker.breaker
 import java.awt.event.KeyEvent
 
 import com.neo.sk.breaker.breaker.BkMap
+
+import scala.collection.mutable
 import scala.math._
 import scala.util.Random
 
@@ -33,10 +35,17 @@ trait Grid {
   var frameCount = 0l
   var map = 1
   var grid = Map[Point, Spot]()
+  var scoreMap = mutable.HashMap.empty[Long, Int]
   var snakes = Map.empty[Long, SkDt]
   var breakers = Map.empty[Long, Breaker]
   var actionMap = Map.empty[Long, Map[Long, Int]]
+  var blockNum = 0
 
+  def init() = {
+    actionMap = Map.empty[Long, Map[Long, Int]]
+    scoreMap = mutable.HashMap.empty[Long, Int]
+    grid = Map.empty[Point, Spot]
+  }
 
   def removeBreaker(id: Long) = {
     val s = breakers.get(id)
@@ -51,6 +60,7 @@ trait Grid {
     grid ++= blocks.map ( b =>
       Point(b.x, b.y) -> Block(b.score)
     )
+    blockNum = blocks.size
   }
 
   def addAction(id: Long, keyCode: Int) = {
@@ -126,6 +136,8 @@ trait Grid {
           impact = 2
           newScore += s
           grid -= p
+          scoreMap(id) += s
+          blockNum -= 1
         }
       case (p, Stick(_, length, _)) =>
         println("find stick")

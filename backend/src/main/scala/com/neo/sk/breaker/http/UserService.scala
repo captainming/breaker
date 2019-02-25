@@ -29,7 +29,7 @@ trait UserService extends BaseService with SessionBase{
                 setSession(
                   UserSession(UserSessionInfo(user.id, user.name), System.currentTimeMillis()).toUserSessionMap
                 ) { ctx =>
-                  ctx.complete(SuccessRsp())
+                  ctx.complete(LoginRsp(Some(userLogin(user.id, user.name))))
                 }
               }
               else {
