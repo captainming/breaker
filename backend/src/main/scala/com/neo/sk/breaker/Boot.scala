@@ -2,11 +2,13 @@ package com.neo.sk.breaker
 
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
+import akka.dispatch.MessageDispatcher
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.neo.sk.breaker.http.HttpService
-
+import akka.actor.typed.scaladsl.adapter._
+import com.neo.sk.breaker.snake.RoomManager
 import scala.language.postfixOps
 
 /**
@@ -29,7 +31,7 @@ object Boot extends HttpService {
 
   val log: LoggingAdapter = Logging(system, getClass)
 
-
+  val roomManager = system.spawn(RoomManager.create(), "roomManager")
 
   def main(args: Array[String]) {
     log.info("Starting.")

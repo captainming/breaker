@@ -96,6 +96,7 @@ object RoomActor {
               subscriber ! GameError(1001, "房间已满")
             }
             else {
+              grid.genBlocks()
               joinerCountInActor += 1
               userMap += (id -> name)
               subscribers ::= (id, subscriber)
@@ -104,7 +105,6 @@ object RoomActor {
               subscriber ! UserInfo(id, roomId)
               subscribers.map(_._2) foreach (s => s ! RoomInfo(joinerCountInActor))
               if (joinerCountInActor == 2) {
-                grid.genBlocks()
                 val userInfo = userMap.toList.map(item =>
                   PlayerInfo(item._1, item._2)
                 )
@@ -128,11 +128,6 @@ object RoomActor {
           case LeftRoom(id, name, subscriber) =>
             log.debug(s"${ctx.self.path} receive msg: $msg")
             log.debug(s"$id - $name left room - $roomId")
-            grid.removeBreaker(id)
-            subscribers = subscribers.filterNot(s => s._1 == id)
-            subscribers.find(_._1 == id).map(_._2).foreach(s => ctx.unwatch(s))
-            userMap -= id
-            subscriber ! Protocol.BreakerLeft(id, name)
             Behaviors.same
 
           case StreamCompleteMsg(id) =>
@@ -142,12 +137,12 @@ object RoomActor {
               grid.removeBreaker(id)
               subscribers.find(_._1 == id).map(_._2).foreach(s => ctx.unwatch(s))
               subscribers = subscribers.filterNot(_._1 == id)
-              userMap -= id
+//              userMap -= id
               if (switcher) {
                 timer.cancel(syncTimerPrefix + roomId)
                 tickCount = 0
                 grid.init()
-                subscribers.map(_._2).foreach(s => s ! GridDataToSync(dataDeposit.compress(grid.getGridData), false))
+                subscribers.map(_._2).foreach(s => s ! GridDataToSync(grid.getGridData, false))
                 dataDeposit = GridDataSync(0L, List.empty[Breaker], List.empty[Bk], List.empty[Sk], List.empty[Bl])
                 subscribers.map(_._2).foreach(s => s ! Protocol.GameBreak)
                 switcher = false
@@ -165,17 +160,23 @@ object RoomActor {
           case SyncData =>
             if (tickCount * frameRate / 1000 >= (timeLimit + countDownLimit)) {
 
-              val winnerId =
-                if (grid.scoreMap.values.toList.distinct.lengthCompare(1) == 1) {
-                  grid.scoreMap.toList.maxBy(_._2)._1
+              val winnerId = if (grid.breakers.isEmpty) 0
+              else{
+                if (grid.breakers.values.toList.distinct.lengthCompare(2) == -1) {
+                  grid.breakers.values.toList.head.id
                 } else {
-                  0
+                  if (grid.breakers.values.toList.map(_.score).distinct.lengthCompare(1) == 1){
+                    grid.breakers.values.toList.maxBy(_.score).id
+                  }
+                  else
+                    0
                 }
+              }
 
               val gameResult = grid.scoreMap.map(s => GameResultInfo(s._1, s._2)).toList
               subscribers.map(_._2).foreach(s => s ! Protocol.GameOver(winnerId, gameResult))
               grid.init()
-              subscribers.map(_._2).foreach(s => s ! GridDataToSync(dataDeposit.compress(grid.getGridData), false))
+              subscribers.map(_._2).foreach(s => s ! GridDataToSync(grid.getGridData, false))
               dataDeposit = GridDataSync(0L, List.empty[Breaker], List.empty[Bk], List.empty[Sk], List.empty[Bl])
 
               timer.cancel(syncTimerPrefix + roomId)
@@ -211,11 +212,22 @@ object RoomActor {
 
                   subscribers.map(_._2).foreach(s => s ! Protocol.Ranks(grid.currentRank))
 
-                  val winnerId = grid.scoreMap.toList.maxBy(_._2)._1
+                  val winnerId = if (grid.breakers.isEmpty) 0
+                  else{
+                    if (grid.breakers.values.toList.distinct.lengthCompare(2) == -1) {
+                      grid.breakers.values.toList.head.id
+                    } else {
+                      if (grid.breakers.values.toList.map(_.score).distinct.lengthCompare(1) == 1){
+                        grid.breakers.values.toList.maxBy(_.score).id
+                      }
+                      else
+                        0
+                    }
+                  }
                   val gameResult = grid.scoreMap.map(s => GameResultInfo(s._1, s._2)).toList
                   subscribers.map(_._2).foreach(s => s ! Protocol.GameOver(winnerId, gameResult))
                   grid.init()
-                  subscribers.map(_._2).foreach(s => s ! GridDataToSync(dataDeposit.compress(grid.getGridData), false))
+                  subscribers.map(_._2).foreach(s => s ! GridDataToSync(grid.getGridData, false))
                   dataDeposit = GridDataSync(0L, List.empty[Breaker], List.empty[Bk], List.empty[Sk], List.empty[Bl])
                   if (userMap.keys.toList.lengthCompare(joinerLimit) == 0) {
                     userMap.foreach { u => grid.addPlayer(u._1, u._2) }
@@ -228,9 +240,9 @@ object RoomActor {
                     val data2 = dataDeposit.compress(data1)
                     val data = if (tickCount == ((countDownLimit + 1) * 1000 / frameRate + 2)) {
                       //第一次同步数据
-                      GridDataToSync(data2, true)
+                      GridDataToSync(data1, true)
                     } else {
-                      GridDataToSync(data2, mustOrNot)
+                      GridDataToSync(data1, mustOrNot)
                     }
                     subscribers.map(_._2).foreach(s => s ! data)
                     dataDeposit = data1

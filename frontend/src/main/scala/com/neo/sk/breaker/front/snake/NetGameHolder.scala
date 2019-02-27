@@ -1,14 +1,20 @@
 package com.neo.sk.breaker.front.breaker
 
-import com.neo.sk.breaker.breaker.Protocol.GridDataSync
+import com.neo.sk.breaker.breaker.Protocol._
 import com.neo.sk.breaker.breaker._
+import com.neo.sk.breaker.front.pages.WelcomePage
+import com.neo.sk.frontUtils.MiddleBufferInJs
+import mhtml.Var
 import org.scalajs.dom
 import org.scalajs.dom.ext
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
+import com.neo.sk.frontUtils.byteObject.ByteObject._
+import com.neo.sk.frontUtils.byteObject.decoder
 
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
+import scala.scalajs.js.typedarray.ArrayBuffer
 
 /**
   * User: Taoz
@@ -32,11 +38,22 @@ class NetGameHolder(id: Long, name: String, roomId: Long) {
   var myId = -1l
   var myName = "test"
 
-  val grid = new GridOnClient(bounds)
+  var syncFlag = false
+  var justSynced = false
+  var syncGridData: scala.Option[Protocol.GridDataSync] = None
+  var dataDeposit = GridDataSync(0L, List.empty[Breaker], List.empty[Bk], List.empty[Sk], List.empty[Bl])
+
+  var gameOver = false
+  var gameBreak = false
+  var winner = 0l
+  var gameResultInfo = List.empty[GameResultInfo]
+  var countDownFlag = false
+  var countDownNum = ""
+
+  var grid = new GridOnClient(bounds)
   var firstCome = true
   var wsSetup = false
-  var justSynced = false
-
+  var actionList = Map[Long, (Int, Long)]()
   val watchKeys = Set(
     KeyCode.Space,
     KeyCode.Left,
@@ -44,25 +61,63 @@ class NetGameHolder(id: Long, name: String, roomId: Long) {
     KeyCode.Right,
     KeyCode.Down,
     KeyCode.F2,
+    KeyCode.Escape,
     KeyCode.Enter
   )
 
+  val aboutCanvas = dom.window.document.getElementById("aboutCanvas").asInstanceOf[HTMLDivElement]
+  //左侧栏
+  val idContainerDiv = dom.window.document.getElementById("idContainer").asInstanceOf[HTMLDivElement]
+  val nameContainerDiv = dom.window.document.getElementById("nameContainer").asInstanceOf[HTMLDivElement]
+  val roomIdDiv = dom.window.document.getElementById("roomId").asInstanceOf[HTMLDivElement]
+  val landlordNumDiv = dom.window.document.getElementById("landlordNum").asInstanceOf[HTMLDivElement]
+  //右侧栏
+  val gameTimeDiv = dom.window.document.getElementById("gameTime").asInstanceOf[HTMLDivElement]
+  //对战双方昵称
+  val myname = dom.window.document.getElementById("myName").asInstanceOf[HTMLDivElement]
+  val otherName = dom.window.document.getElementById("otherName").asInstanceOf[HTMLDivElement]
+  //退出房间按钮
+  val leaveRoom = dom.window.document.getElementById("leaveRoom").asInstanceOf[HTMLDivElement]
+
+  val infoFlag = Var(0)
+  var infoMsg = ""
   val canvas = dom.window.document.getElementById("GameView").asInstanceOf[HTMLCanvasElement]
   val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private[this] val drawGame = new Draw(ctx, canvas)
 
+  val infoModal = infoFlag.map {
+    case 0 => <div></div>
+    case 1 =>
+      <div style="width: 100%; height: 100%; position: fixed; top: 0px; background-color: rgba(0,0,0,0.3); z-index: 1;">
+        <div style="width: 900px; height: 400px; margin: 80px auto 0px auto; border-radius: 8px; font-size: 18px; background-color: white; align-items: center; display: flex; flex-direction: column; justify-content: center; z-index: 2; ">
+          <div style="color: black;">
+            {infoMsg}
+          </div>
+          <div style="margin-top: 100px; display: flex;">
+            <button type="button" style="width: 180px; height: 50px; border-radius: 4px; border: none; background-color: #225599; color: white; cursor: pointer; font-size: 16px;" onclick={() => {
+              infoFlag := 0; canvas.focus()
+            }}>留在房间</button>
+            <button type="button" style="margin-left: 20px; width: 180px; height: 50px; border-radius: 4px; border: none; background-color: #225599; color: white; cursor: pointer; font-size: 16px;" onclick={() => {
+              WelcomePage.showGame := 0
+            }}>回到大厅</button>
+          </div>
+        </div>
+      </div>
+    case _ => <div></div>
+  }
   def start(): xml.Node = {
     drawGame.drawGameOff(firstCome)
     canvas.width = canvasBoundary.x.toInt
     canvas.height = canvasBoundary.y.toInt
+    aboutCanvas.style.display = "block"
 
     myName = name
-    joinGame(name)
+    joinGame()
 
     dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
     nextFrame = dom.window.requestAnimationFrame(gameRender())
     <div>
-      <canvas id ="GameView" tabindex="1"> </canvas>
+      {infoModal}
     </div>
   }
 
@@ -78,6 +133,10 @@ class NetGameHolder(id: Long, name: String, roomId: Long) {
       if (!justSynced) {
         update()
       } else {
+        if (syncGridData.nonEmpty) {
+          initSyncData(syncGridData.get)
+          syncGridData = None
+        }
         justSynced = false
       }
     }
@@ -93,6 +152,9 @@ class NetGameHolder(id: Long, name: String, roomId: Long) {
       drawGame.drawBackground()
       drawGame.drawGrid(myId, data)
       drawGame.drawRank(currentRank)
+      if (winner == myId){
+        drawGame.drawWait(2)
+      }
       data.breakers.find(_.id == myId) match {
         case Some(breaker) =>
           firstCome = false
@@ -109,37 +171,69 @@ class NetGameHolder(id: Long, name: String, roomId: Long) {
     }
   }
 
+  def initSyncData(data: GridDataSync): Unit = {
+    if (syncFlag || grid.frameCount < data.frameCount){
+      syncFlag = false
+      grid.frameCount = data.frameCount
+      grid.breakers = data.breakers.map(s => s.id -> s).toMap
+      val blockMap = data.blockDetails.map(c => Point(c.x, c.y) -> Block(c.score)).toMap
+      val stickMap = data.stickDetails.map(d => Point(d.position.x, d.position.y) -> Stick(d.id, d.length, d.color)).toMap
+      val ballMap = data.ballDetails.map(e => Point(e.position.x, e.position.y) -> Ball(e.id, e.color, e.direction, e.speed)).toMap
+      val gridMap = blockMap ++ stickMap ++ ballMap
+      grid.grid = gridMap
+      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount)
+    } else {
+      println("丢帧！！！同步前,后台发过来的帧号为:" + data.frameCount + "前端此时的帧号为:" + grid.frameCount)
+    }
+  }
 
-  def joinGame(name: String): Unit = {
-    val playground = dom.document.getElementById("playground")
-    playground.innerHTML = s"Trying to join game as '$name'..."
-    val gameStream = new WebSocket(getWebSocketUri(dom.document, name))
+  val sendBuffer = new MiddleBufferInJs(409600)
+  def joinGame(): Unit = {
+
+    val gameStream = new WebSocket(getWebSocketUri(dom.document, id, name, roomId))
     gameStream.onopen = { (event0: Event) =>
       drawGame.drawGameOn()
-      playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
       canvas.focus()
       canvas.onkeydown = {
         (e: dom.KeyboardEvent) => {
-          println(s"keydown: ${e.keyCode}")
           if (watchKeys.contains(e.keyCode)) {
             println(s"key down: [${e.keyCode}]")
-            if (e.keyCode == KeyCode.F2) {
-              gameStream.send("T" + System.currentTimeMillis())
-            } else {
-              gameStream.send(e.keyCode.toString)
-              grid.addAction(myId, e.keyCode)
+            if (e.keyCode == KeyCode.Escape){
+              infoMsg = "退出房间？"
+              infoFlag := 1
             }
-            e.preventDefault()
+            else {
+              val msg: Protocol.MsgFromFront = if (e.keyCode == KeyCode.F2) {
+                NetTest(myId, System.currentTimeMillis())
+              } else {
+                val emptyFrame = grid.addActionWithFrame(myId, e.keyCode, grid.frameCount)
+                val timeStamp = System.currentTimeMillis()
+                actionList += timeStamp -> (e.keyCode, emptyFrame)
+                KeyWithFrame(myId, e.keyCode, emptyFrame, timeStamp)
+//                gameStream.send(e.keyCode.toString)
+//                grid.addAction(myId, e.keyCode)
+              }
+              msg.fillMiddleBuffer(sendBuffer) //encode msg
+              val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
+              gameStream.send(ab) // send data.
+              e.preventDefault()
+            }
           }
         }
       }
+      val tickTock = new Function0[Unit] {
+        val msg: MsgFromFront = TickTock
+        msg.fillMiddleBuffer(sendBuffer)
+        val ab: ArrayBuffer = sendBuffer.result()
+        def apply(): Unit = gameStream.send(ab)
+      }
+      dom.window.setInterval(tickTock, 20000)
       event0
     }
 
     gameStream.onerror = { (event: Event) =>
       drawGame.drawGameOff(firstCome)
-      playground.insertBefore(p(s"Failed: code: ${event.`type`}"), playground.firstChild)
       wsSetup = false
 
     }
@@ -148,62 +242,136 @@ class NetGameHolder(id: Long, name: String, roomId: Long) {
     import io.circe.generic.auto._
     import io.circe.parser._
     gameStream.onmessage = { (event: MessageEvent) =>
-      //val wsMsg = read[Protocol.GameMessage](event.data.toString)
-      val wsMsg = decode[Protocol.GameMessage](event.data.toString).right.get
-      wsMsg match {
-        case Protocol.Id(id) => myId = id
-        case Protocol.TextMsg(message) => writeToArea(s"MESSAGE: $message")
-        case Protocol.NewBreakerJoined(id, user) => writeToArea(s"$user joined!")
-        case Protocol.BreakerLeft(id, user) => writeToArea(s"$user left!")
-        case a@Protocol.BreakerAction(id, keyCode, frame) =>
-          if (frame > grid.frameCount) {
-            //writeToArea(s"!!! got breaker action=$a whem i am in frame=${grid.frameCount}")
-          } else {
-            //writeToArea(s"got breaker action=$a")
+      event.data match {
+        case blobMsg: Blob =>
+          val fr = new FileReader()
+          fr.readAsArrayBuffer(blobMsg)
+          fr.onloadend = { _: Event =>
+            val buf = fr.result.asInstanceOf[ArrayBuffer] // read data from ws.
+          val middleDataInJs = new MiddleBufferInJs(buf) //put data into MiddleBuffer
+          val encodedData: Either[decoder.DecoderFailure, Protocol.GameMessage] = bytesDecode[Protocol.GameMessage](middleDataInJs) // get encoded data.
+            encodedData match {
+              case Right(data) =>
+                data match {
+                  case Protocol.UserInfo(id, roomIdT) =>
+                    myId = id
+                    idContainerDiv.innerHTML = "您的ID:" + id.toString
+                    nameContainerDiv.innerHTML = "您的昵称:" + name
+//                    myName.style= s"left:$start"+"px"
+                    roomIdDiv.innerHTML = "房间号:" + roomIdT.toString
+                    //显示退出房间按钮
+                    leaveRoom.onclick = {e:MouseEvent => WelcomePage.showGame := 0}
+                    leaveRoom.style = "display:block"
+
+                  case Protocol.AllPlayerInfo(playerList) =>
+                    playerList.foreach{ p =>
+                      if(p.id != myId){
+                        //显示对方的昵称
+                        otherName.innerHTML = p.nameT
+                      }
+                    }
+
+                  case Protocol.GameTime(time, countDownOrNot) =>
+                    if (countDownOrNot) {
+                      countDownFlag = true
+                      countDownNum = time match {
+                        case x => x
+                      }
+                    } else {
+                      gameTimeDiv.innerHTML = time
+                    }
+
+                  case RoomInfo(num) =>
+                    landlordNumDiv.innerHTML = "当前房间人数:" + num.toString
+
+                  case Protocol.GameBreak =>
+                    grid.init()
+                    firstCome = false
+                    gameOver = true
+                    gameBreak = true
+                    winner = myId
+                    countDownNum = ""
+
+                  case Protocol.GameOver(winnerId, gameResult) =>
+                    grid.init()
+                    gameOver = true
+                    winner = winnerId
+                    gameResultInfo = gameResult
+
+                  case Protocol.GameInfo(errCode, msg) =>
+                    errCode match {
+                      case 101 => infoMsg = s"您要进的房间不存在 为您新创建了房间$msg"
+                      case 102 => infoMsg = s"无可随机进入的房间 为您新创建了房间$msg"
+                      case _ =>
+                    }
+                    infoFlag := 1
+
+                  case Protocol.TextMsg(message) =>
+                    println(s"MESSAGE: $message")
+
+                  case a@Protocol.LandlordAction(id, keyCode, frame, timestamp) =>
+                    if (id == myId) {
+                      if (actionList.get(timestamp).isEmpty) {
+                        //不在前端预执行之列
+                        grid.addActionWithFrame(id, keyCode, frame)
+                        if (frame <= grid.frameCount) { //回溯
+                          //todo replay
+                        }
+                      } else {
+                        if (frame == -1) {
+                          //延迟丢弃该帧
+                          grid.deleteActionWithFrame(id, actionList(timestamp)._2)
+                          val tmp = grid
+                          //                tmp.rePlay(actionList(timestamp)._2 - 1, grid.frameCount)
+                          grid = tmp
+                        }
+                        actionList -= timestamp
+                      }
+                    } else {
+                      grid.addActionWithFrame(id, keyCode, frame)
+                      if (frame <= grid.frameCount) { //回溯
+                        val tmp = grid
+                        //              tmp.rePlay(frame - 1, grid.frameCount)
+                        grid = tmp
+                      }
+                    }
+
+                  case Protocol.Ranks(current) =>
+                    currentRank = current
+
+                  case diffData: Protocol.GridDataToSync =>
+                    val data = diffData.data
+                    syncGridData = Some(data)
+                    syncFlag = diffData.flag
+                    justSynced = true
+
+                  case Protocol.NetDelayTest(createTime) =>
+                    val receiveTime = System.currentTimeMillis()
+                    val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}"
+                    println(m)
+                }
+              case Left(e) =>
+                println(s"got error: ${e.message}")
+            }
           }
-          grid.addActionWithFrame(id, keyCode, frame)
-
-        case Protocol.Ranks(current) =>
-          //writeToArea(s"rank update. current = $current") //for debug.
-          currentRank = current
-
-        case Protocol.BlockInit(blocks) =>
-          grid.grid ++= blocks.map(a => Point(a.x, a.y) -> Block(a.score))
-
-        case data: Protocol.GridDataSync =>
-          //writeToArea(s"grid data got: $msgData")
-          //TODO here should be better code.
-          grid.actionMap = grid.actionMap.filterKeys(_ > data.frameCount)
-          grid.frameCount = data.frameCount
-          grid.breakers = data.breakers.map(s => s.id -> s).toMap
-          val blockMap = data.blockDetails.map(c => Point(c.x, c.y) -> Block(c.score)).toMap
-          val stickMap = data.stickDetails.map(d => Point(d.position.x, d.position.y) -> Stick(d.id, d.length, d.color))
-          val ballMap = data.ballDetails.map(e => Point(e.position.x, e.position.y) -> Ball(e.id, e.color, e.direction, e.speed))
-          val gridMap = blockMap ++ stickMap ++ ballMap
-          grid.grid = gridMap
-          justSynced = true
-
-        case Protocol.NetDelayTest(createTime) =>
-          val receiveTime = System.currentTimeMillis()
-          val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}"
-          writeToArea(m)
       }
     }
 
 
     gameStream.onclose = { (event: Event) =>
       drawGame.drawGameOff(firstCome)
-      playground.insertBefore(p("Connection to game lost. You can try to rejoin manually."), playground.firstChild)
       wsSetup = false
     }
 
-    def writeToArea(text: String): Unit =
-      playground.insertBefore(p(text), playground.firstChild)
+    def writeToArea(text: String): Unit ={
+
+    }
+
   }
 
-  def getWebSocketUri(document: Document, nameOfChatParticipant: String): String = {
+  def getWebSocketUri(document: Document, id:Long, nameOfChatParticipant: String, roomId: Long): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/breaker/netSnake/join?name=$nameOfChatParticipant"
+    s"$wsProtocol://${dom.document.location.host}/breaker/netSnake/join?id=$id&name=$nameOfChatParticipant&roomId=$roomId"
   }
 
   def p(msg: String) = {

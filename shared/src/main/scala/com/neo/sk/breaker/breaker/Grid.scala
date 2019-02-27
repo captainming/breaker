@@ -57,8 +57,10 @@ trait Grid {
 
   def genBlocks() = {
     val blocks = BkMap.BlockMap(map)
-    grid ++= blocks.map ( b =>
-      Point(b.x, b.y) -> Block(b.score)
+
+    blocks.map ( b =>
+      if (grid.get(Point(b.x, b.y)).isEmpty)
+      grid += Point(b.x, b.y) -> Block(b.score)
     )
     blockNum = blocks.size
   }
@@ -68,11 +70,22 @@ trait Grid {
   }
 
   def addActionWithFrame(id: Long, keyCode: Int, frame: Long) = {
-    val map = actionMap.getOrElse(frame, Map.empty)
+    var emptyFrame = frame
+    var map = actionMap.getOrElse(emptyFrame, Map.empty)
+    while (map.nonEmpty && map.get(id).nonEmpty) {
+      emptyFrame += 1
+      map = actionMap.getOrElse(emptyFrame, Map.empty)
+    }
     val tmp = map + (id -> keyCode)
     actionMap += (frame -> tmp)
+    emptyFrame
   }
 
+  def deleteActionWithFrame(id: Long, frame: Long) = {
+    val map = actionMap.getOrElse(frame, Map.empty)
+    val tmp = map - id
+    actionMap += (frame -> tmp)
+  }
 
   def update() = {
     updateBreakers()
@@ -114,7 +127,7 @@ trait Grid {
     var newScore = breaker.score
     if (direction == Point(0, 0)){
       direction = keyCode match {
-        case Some(13) => Point(1, -1)
+        case Some(13) => randomDirection()
         case _ => Point(0, 0)
       }
     }
@@ -134,14 +147,15 @@ trait Grid {
       case (p, Block(s)) =>
         if (judgeFlied(p, b_height, b_width, newPosition)) {
           impact = 2
+          println(s"impact = $impact")
           newScore += s
           grid -= p
-          scoreMap(id) += s
+//          scoreMap(id) += s
           blockNum -= 1
         }
-      case (p, Stick(_, length, _)) =>
+      case (p, Stick(id, length, _)) =>
         println("find stick")
-        if (judgeFlied(p, 2, length, newPosition)) {
+        if (judgeFlied(p, 2, length, newPosition) && (id == breaker.id)) {
           impact = 2
         }
       case _ =>
@@ -196,6 +210,13 @@ trait Grid {
     if (p.x + radius >= head.x && p.x - radius <= head.x + w && p.y + radius >= head.y && p.y - radius <= head.y + h) true
     else false
   }
+
+  def randomDirection() = {
+    val x = random.nextFloat() + 0.01.toFloat
+    val y = -1 * (random.nextFloat() +0.01).toFloat
+    Point(x, y)
+  }
+
 
   def updateAndGetGridData() = {
     update()

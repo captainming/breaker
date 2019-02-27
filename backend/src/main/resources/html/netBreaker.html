@@ -17,8 +17,21 @@
 
   <script type="text/javascript" src="/breaker/static/sjsout/frontend-fastopt.js"></script>
   <!--<script type="text/javascript" src="/breaker/frontend-launcher.js"></script>-->
-
   <script>front.Main.run()</script>
+  <div id="aboutCanvas" style="font-family: KaiTi,serif; ">
+    <div style = "display: flex; position: absolute; top: 20px; left: 85%;" >
+      <div style = "display: flex; flex-direction: column; margin-top: 45px;">
+        <div id="idContainer"></div>
+        <div id="nameContainer"></div>
+        <div id="roomId"></div>
+        <div id="landlordNum"></div>
+        <button id="leaveRoom" style="display: none" class="btn btn-outline-info">退出房间</button>
+      </div>
+      <div id = "myName" class="playerName myName"></div>
+      <div id = "otherName" class="playerName otherName"></div>
+    </div>
+    <canvas id ="GameView" tabindex="1"> </canvas>
+  </div>
 
 </body>
 </html>

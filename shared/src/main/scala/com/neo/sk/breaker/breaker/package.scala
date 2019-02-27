@@ -29,7 +29,7 @@ package object breaker {
 
     def -(other: Point) = Point(x - other.x, y - other.y)
 
-    def *(n: Int) = Point(x * n, y * n)
+    def *(n: Float) = Point(x * n, y * n)
 
     def /(value: Float) = Point(x / value, y / value)
 
@@ -65,7 +65,7 @@ package object breaker {
 
   def b_height = Boundary.h / 20
   def b_width = Boundary.w / 15
-  def Speed = 3
+  def Speed = 2
   def radius = 1
 
   trait CommonRsp {

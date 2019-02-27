@@ -39,7 +39,7 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
 
   def drawGameOff(firstCome: Boolean): Unit = {
     ctx.drawImage(mapImg,0, 0, bounds.x * canvasUnit, bounds.y * canvasUnit)
-    ctx.fillStyle = "rgb(250, 250, 250)"
+    ctx.fillStyle = "#EE9A00"
     ctx.font=s"36px Comic Sans Ms"
     if (firstCome) {
       ctx.fillText("Welcome.", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
@@ -53,7 +53,7 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
     ctx.fillStyle = "#EE9A00"
     ctx.font=s"36px Comic Sans Ms"
     if (typ == 1) {
-      ctx.fillText("You Dead! Press Space Key To Restart!", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
+      ctx.fillText("You Lose! Press Space Key To Restart!", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
     } else if (typ == 2) {
       ctx.fillText("You Win! Press Space Key To Restart!", canvasBoundary.x * 0.13, canvasBoundary.y * 0.26)
     } else if (typ == 3) {
@@ -101,7 +101,7 @@ class Draw(ctx: dom.CanvasRenderingContext2D,canvas: Canvas) {
 
   def drawRank(rank: List[Score]) {
 
-    ctx.fillStyle = "rgb(250, 250, 250)"
+    ctx.fillStyle = "rgb(0, 0, 0)"
     ctx.textAlign = "left"
     ctx.textBaseline = "top"
 

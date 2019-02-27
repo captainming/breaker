@@ -37,9 +37,14 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   private[this] def genWaitingBreaker() = {
     waitingJoin.filterNot(kv => breakers.contains(kv._1)).foreach { case (id, name) =>
-      val header = Point(50, 50)
-      val center = Point(60, 49)
-      breakers += id -> Breaker(id, name, Sk(id, header, 20, Random.nextInt(3) + 1), Bl(id, center, random.nextInt(3) + 1, Point(0, 0)))
+      val header1 = Point(25, 50)
+      val center1 = Point(35, 49)
+      val header2 = Point(85, 50)
+      val center2 = Point(95, 49)
+      if (breakers.isEmpty)
+        breakers += id -> Breaker(id, name, Sk(id, header1, 15, 1), Bl(id, center1, 1, Point(0, 0)))
+      else
+        breakers += id -> Breaker(id, name, Sk(id, header2, 15, 2), Bl(id, center2, 2, Point(0, 0)))
     }
     waitingJoin = Map.empty[Long, String]
   }
@@ -47,25 +52,6 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   private[this] def updateRanks() = {
     currentRank = breakers.values.map(s => Score(s.id, s.name, s.score)).toList.sortBy(s => s.s)
-    var historyChange = false
-    currentRank.foreach { cScore =>
-      historyRankMap.get(cScore.id) match {
-        case Some(oldScore) if cScore.s > oldScore.s =>
-          historyRankMap += (cScore.id -> cScore)
-          historyChange = true
-        case None if cScore.s > historyRankThreshold =>
-          historyRankMap += (cScore.id -> cScore)
-          historyChange = true
-        case _ =>
-      }
-    }
-
-    if (historyChange) {
-      historyRankList = historyRankMap.values.toList.sortBy(t => t.s).take(historyRankLength)
-      historyRankThreshold = historyRankList.lastOption.map(_.s).getOrElse(-1)
-      historyRankMap = historyRankList.map(s => s.id -> s).toMap
-    }
-
   }
 
 
